@@ -53,6 +53,34 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.white),
         ),
       ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.white,
+        headerBackgroundColor: AppColors.navy800,
+        headerForegroundColor: AppColors.white,
+        dayStyle: const TextStyle(color: AppColors.navy900),
+        weekdayStyle: const TextStyle(color: AppColors.navy900),
+        yearStyle: const TextStyle(color: AppColors.navy900),
+        todayForegroundColor: MaterialStateProperty.all(AppColors.navy800),
+        dayForegroundColor: MaterialStateProperty.resolveWith((states) {
+          if (states.contains(MaterialState.selected)) {
+            return AppColors.white; // Seçili tarih için beyaz
+          }
+          return AppColors.navy900; // Normal tarihler için koyu
+        }),
+        yearForegroundColor: MaterialStateProperty.resolveWith((states) {
+          if (states.contains(MaterialState.selected)) {
+            return AppColors.white; // Seçili yıl için beyaz
+          }
+          return AppColors.navy900; // Normal yıllar için koyu
+        }),
+        todayBorder: const BorderSide(color: AppColors.navy800, width: 1),
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: AppColors.navy900,
+        ),
+        confirmButtonStyle: TextButton.styleFrom(
+          foregroundColor: AppColors.navy800,
+        ),
+      ),
     );
   }
 }

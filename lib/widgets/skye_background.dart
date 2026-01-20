@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:skye_app/theme/app_colors.dart';
 
 class SkyeBackground extends StatelessWidget {
   const SkyeBackground({

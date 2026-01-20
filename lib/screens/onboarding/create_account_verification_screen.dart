@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:skye_app/screens/home/home_screen.dart';
+import 'package:skye_app/screens/onboarding/personal_information_screen.dart';
 import 'package:skye_app/theme/app_colors.dart';
 import 'package:skye_app/widgets/otp_input_field.dart';
 import 'package:skye_app/widgets/primary_button.dart';
 import 'package:skye_app/widgets/skye_background.dart';
 import 'package:skye_app/widgets/skye_logo.dart';
 
-class LoginVerificationScreen extends StatefulWidget {
-  const LoginVerificationScreen({super.key});
+class CreateAccountVerificationScreen extends StatefulWidget {
+  const CreateAccountVerificationScreen({super.key});
+
+  static const routeName = '/create-account-verification';
 
   @override
-  State<LoginVerificationScreen> createState() => _LoginVerificationScreenState();
+  State<CreateAccountVerificationScreen> createState() => _CreateAccountVerificationScreenState();
 }
 
-class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
+class _CreateAccountVerificationScreenState extends State<CreateAccountVerificationScreen> {
   final GlobalKey<OtpInputFieldState> _otpInputKey = GlobalKey<OtpInputFieldState>();
   final TextEditingController _smsController = TextEditingController();
   final FocusNode _smsFocusNode = FocusNode();
@@ -22,6 +24,14 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
   String _otpCode = '';
   bool _isVerifying = false;
   bool _hasError = false;
+  String? _phoneNumber;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    _phoneNumber = args?['phone'] as String?;
+  }
 
   @override
   void dispose() {
@@ -66,8 +76,13 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
     if (!mounted) return;
 
     if (isValid) {
-      // Success - Navigate to home
-      Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+      // Success - Navigate to personal information screen
+      Navigator.of(context).pushReplacementNamed(
+        PersonalInformationScreen.routeName,
+        arguments: {
+          'phone': _phoneNumber ?? '',
+        },
+      );
     } else {
       // Error - Show vibration and error message
       HapticFeedback.mediumImpact();
@@ -79,7 +94,7 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
         _otpCode = '';
       });
       
-      // After 0.5 seconds, revert to "Verify" button
+      // After 1.5 seconds, revert to "Verify" button
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) {
           setState(() {
@@ -128,7 +143,7 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'Log In',
+                              'Create An Account',
                               style: Theme.of(context).textTheme.headlineMedium,
                             ),
                           ),

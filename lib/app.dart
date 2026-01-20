@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:skye_app/screens/home/home_screen.dart';
 import 'package:skye_app/screens/login/login_phone_screen.dart';
 import 'package:skye_app/screens/onboarding/create_account_phone_screen.dart';
+import 'package:skye_app/screens/onboarding/create_account_verification_screen.dart';
+import 'package:skye_app/screens/onboarding/personal_information_screen.dart';
+import 'package:skye_app/screens/onboarding/usage_details_screen.dart';
 import 'package:skye_app/screens/onboarding/welcome_screen.dart';
 import 'package:skye_app/theme/app_theme.dart';
 
@@ -18,6 +21,11 @@ class SkyeApp extends StatelessWidget {
       routes: {
         CreateAccountPhoneScreen.routeName: (_) =>
             const CreateAccountPhoneScreen(),
+        CreateAccountVerificationScreen.routeName: (_) =>
+            const CreateAccountVerificationScreen(),
+        PersonalInformationScreen.routeName: (_) =>
+            const PersonalInformationScreen(),
+        UsageDetailsScreen.routeName: (_) => const UsageDetailsScreen(),
         LoginPhoneScreen.routeName: (_) => const LoginPhoneScreen(),
         HomeScreen.routeName: (_) => const HomeScreen(),
       },

@@ -6,10 +6,12 @@ class PrimaryButton extends StatelessWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.child,
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -21,11 +23,13 @@ class PrimaryButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.navy800,
           foregroundColor: AppColors.white,
+          disabledBackgroundColor: AppColors.navy700,
+          disabledForegroundColor: AppColors.white.withValues(alpha: 0.6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: Text(
+        child: child ?? Text(
           label,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),

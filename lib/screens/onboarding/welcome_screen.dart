@@ -21,18 +21,14 @@ class WelcomeScreen extends StatelessWidget {
         child: Stack(
           children: [
             // 🔹 ÜST İÇERİK (LOGO + TEXT)
-            Padding(
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 15,
-                left: 24,
-                right: 24,
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  const Center(child: SkyeLogo()),
-                  const SizedBox(height: 48),
-                  Align(
+            Column(
+              children: [
+                const SizedBox(height: 48),
+                const Center(child: SkyeLogo()),
+                const SizedBox(height: 48),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
+                  child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'The Flight\nPlatform Bringing\nTogether the\nPilots of Today\nand Tomorrow',
@@ -47,8 +43,8 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
 
             // ✈️ AIRPLANE — FLOW’DAN ÇIKTI
@@ -58,12 +54,12 @@ class WelcomeScreen extends StatelessWidget {
               right: 0,
               child: Image.asset(
                 'assets/images/airplane.png',
-                height: 220,
+                height: 200,
                 fit: BoxFit.contain,
               ),
             ),
 
-            // 🔘 ALT CTA — ZATEN DOĞRUYDU
+            // 🔘 ALT CTA — İKİ AŞAMALI GİRİŞ AKIŞI
             Positioned(
               left: 0,
               right: 0,
@@ -73,29 +69,38 @@ class WelcomeScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Kayıtlı Kullanıcı - Log In (Primary)
                     PrimaryButton(
-                      label: "Let's fly.",
+                      label: "Log In",
                       onPressed: () {
                         Navigator.of(context).pushNamed(
-                          CreateAccountPhoneScreen.routeName,
+                          LoginPhoneScreen.routeName,
                         );
                       },
                     ),
-                    const SizedBox(height: 20),
-                    _buildAuthOption(
-                      context,
-                      label: "Already have an account? ",
-                      actionText: "Log In",
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(LoginPhoneScreen.routeName),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildAuthOption(
-                      context,
-                      label: "Don't have an account? ",
-                      actionText: "Sign Up",
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(CreateAccountPhoneScreen.routeName),
+                    const SizedBox(height: 16),
+                    // Yeni Kullanıcı - Sign Up (Outlined)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [Text(
+                          "Don't have an account?",
+                          style: TextStyle(color: AppColors.textPrimary),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pushNamed(
+                              CreateAccountPhoneScreen.routeName,
+                            );
+                          },
+                          child: const Text('Sign Up',
+                            style: TextStyle(
+                            color: AppColors.navy800,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),),
+                        )
+                      ]
                     ),
                   ],
                 ),
@@ -104,38 +109,6 @@ class WelcomeScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-
-  Widget _buildAuthOption(
-    BuildContext context, {
-    required String label,
-    required String actionText,
-    required VoidCallback onTap,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: AppColors.navy700.withOpacity(0.9),
-            fontSize: 14,
-          ),
-        ),
-        GestureDetector(
-          onTap: onTap,
-          child: Text(
-            actionText,
-            style: const TextStyle(
-              color: AppColors.navy800,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
