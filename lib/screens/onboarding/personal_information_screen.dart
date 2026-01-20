@@ -159,6 +159,9 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      backgroundColor: Colors.transparent,
       body: GestureDetector(
         onTap: _dismissKeyboard,
         behavior: HitTestBehavior.opaque,

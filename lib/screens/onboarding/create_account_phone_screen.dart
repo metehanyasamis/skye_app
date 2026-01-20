@@ -38,6 +38,9 @@ class _CreateAccountPhoneScreenState extends State<CreateAccountPhoneScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      backgroundColor: Colors.transparent,
       body: GestureDetector(
         onTap: _dismissKeyboard,
         behavior: HitTestBehavior.opaque,

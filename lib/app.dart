@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:skye_app/screens/home/home_screen.dart';
 import 'package:skye_app/screens/login/login_phone_screen.dart';
 import 'package:skye_app/screens/onboarding/create_account_phone_screen.dart';
@@ -17,6 +18,26 @@ class SkyeApp extends StatelessWidget {
       title: 'Skye',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      builder: (context, child) {
+        // Ensure system UI is transparent
+        SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: Brightness.light,
+          ),
+        );
+        
+        // Wrap all routes with transparent Material to prevent color flash
+        if (child != null) {
+          return Material(
+            color: Colors.transparent,
+            child: child,
+          );
+        }
+        return child ?? const SizedBox.shrink();
+      },
       home: const WelcomeScreen(),
       routes: {
         CreateAccountPhoneScreen.routeName: (_) =>

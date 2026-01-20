@@ -18,14 +18,15 @@ class WelcomeScreen extends StatelessWidget {
       extendBodyBehindAppBar: true,
       extendBody: true,
       body: SkyeBackground(
-        child: Stack(
-          children: [
-            // 🔹 ÜST İÇERİK (LOGO + TEXT)
-            Column(
-              children: [
-                const SizedBox(height: 48),
-                const Center(child: SkyeLogo()),
-                const SizedBox(height: 48),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              // 🔹 ÜST İÇERİK (LOGO + TEXT)
+              Column(
+                children: [
+                  const SizedBox(height: 48),
+                  const Center(child: SkyeLogo()),
+                  const SizedBox(height: 48),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
                   child: Align(
@@ -106,7 +107,8 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

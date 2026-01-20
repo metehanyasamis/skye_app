@@ -6,7 +6,7 @@ class AppTheme {
   static ThemeData get light {
     final base = ThemeData.light();
     return base.copyWith(
-      scaffoldBackgroundColor: AppColors.navy900,
+      scaffoldBackgroundColor: Colors.transparent,
       colorScheme: base.colorScheme.copyWith(
         primary: AppColors.navy800,
         secondary: AppColors.blue500,
