@@ -56,6 +56,7 @@ class SkyeBackground extends StatelessWidget {
               child: Image.asset(
                 'assets/images/world_map.png',
                 fit: BoxFit.cover,
+                alignment: Alignment.center,
                 errorBuilder: (_, __, ___) {
                   debugPrint('[SkyeBackground] world_map.png NOT FOUND');
                   return const SizedBox.shrink();

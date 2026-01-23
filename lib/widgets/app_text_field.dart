@@ -14,10 +14,12 @@ class AppTextField extends StatelessWidget {
     this.minLines,
     this.maxLines,
     this.obscureText,
+    this.prefixIcon,
     this.suffixIcon,
     this.onChanged,
     this.onTap,
     this.inputFormatters,
+    this.readOnly = false,
   });
 
   final String label;
@@ -29,10 +31,12 @@ class AppTextField extends StatelessWidget {
   final int? minLines;
   final int? maxLines;
   final bool? obscureText;
+  final Widget? prefixIcon;
   final Widget? suffixIcon;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onTap;
   final List<TextInputFormatter>? inputFormatters;
+  final bool readOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -71,12 +75,14 @@ class AppTextField extends StatelessWidget {
             inputFormatters: inputFormatters,
             onChanged: onChanged,
             onTap: onTap,
+            readOnly: readOnly,
             textInputAction: TextInputAction.newline,
             textAlignVertical: TextAlignVertical.top,
             style: const TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
               hintText: hint,
               counterText: '', // Hide character counter
+              prefixIcon: prefixIcon,
               suffixIcon: suffixIcon,
               alignLabelWithHint: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -101,10 +107,12 @@ class AppTextField extends StatelessWidget {
       textInputAction: TextInputAction.done,
       textAlignVertical: TextAlignVertical.center,
       style: const TextStyle(color: AppColors.textPrimary),
+      readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         counterText: '', // Hide character counter
+        prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
       ),
     );

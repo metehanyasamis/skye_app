@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter/services.dart';
 import 'package:skye_app/screens/home/home_screen.dart';
 import 'package:skye_app/theme/app_colors.dart';
+import 'package:skye_app/widgets/app_back_button.dart';
+import 'package:skye_app/widgets/base_scaffold.dart';
 import 'package:skye_app/widgets/otp_input_field.dart';
 import 'package:skye_app/widgets/primary_button.dart';
 import 'package:skye_app/widgets/skye_background.dart';
@@ -117,12 +120,12 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
   Widget build(BuildContext context) {
     debugPrint('🧱 [LoginVerificationScreen] build');
 
-    return Scaffold(
+    return BaseScaffold(
       resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
       extendBody: true,
       backgroundColor: Colors.transparent,
-      body: GestureDetector(
+      child: GestureDetector(
         onTap: _dismissKeyboard,
         behavior: HitTestBehavior.opaque,
         child: SkyeBackground(
@@ -137,16 +140,9 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
                       children: [
                         Row(
                           children: [
-                            IconButton(
-                              onPressed: () {
-                                debugPrint(
-                                    '⬅️ [LoginVerificationScreen] back pressed');
-                                Navigator.of(context).pop();
-                              },
-                              icon: const Icon(
-                                Icons.arrow_back,
-                                color: AppColors.white,
-                              ),
+                            AppBackButton(
+                              color: AppColors.white,
+                              icon: Icons.arrow_back,
                             ),
                             const Spacer(),
                             const SkyeLogo(

@@ -1,6 +1,9 @@
+// lib/screens/onboarding/usage_details_screen.dart
 import 'package:flutter/material.dart';
+
 import 'package:skye_app/screens/home/home_screen.dart';
 import 'package:skye_app/widgets/app_text_field.dart';
+import 'package:skye_app/widgets/base_scaffold.dart';
 import 'package:skye_app/widgets/primary_button.dart';
 import 'package:skye_app/widgets/skye_background.dart';
 import 'package:skye_app/widgets/skye_logo.dart';
@@ -24,36 +27,26 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    debugPrint('🧩 [UsageDetailsScreen] didChangeDependencies');
 
     final args =
     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     _userData = args;
-
-    debugPrint('📦 [UsageDetailsScreen] userData=$_userData');
   }
 
   @override
   void dispose() {
-    debugPrint('🧹 [UsageDetailsScreen] dispose');
     _planToUseController.dispose();
     _positionController.dispose();
     _goalsController.dispose();
     super.dispose();
   }
 
-  void _dismissKeyboard() {
-    debugPrint('⌨️ [UsageDetailsScreen] dismissKeyboard');
-    FocusScope.of(context).unfocus();
-  }
+  void _dismissKeyboard() => FocusScope.of(context).unfocus();
 
   Future<void> _onContinue() async {
-    debugPrint('➡️ [UsageDetailsScreen] Continue tapped');
-
     _dismissKeyboard();
 
-    // Prepare data for backend
-    final _signupData = {
+    final signupData = {
       'phone': _userData?['phone'] ?? '',
       'firstName': _userData?['firstName'] ?? '',
       'lastName': _userData?['lastName'] ?? '',
@@ -64,18 +57,11 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
       'goals': _goalsController.text.trim(),
     };
 
-    debugPrint('🧾 [UsageDetailsScreen] signupData prepared: $_signupData');
+    debugPrint('🧾 signupData: $signupData');
 
-    // Simulate API call
-    debugPrint('⏳ [UsageDetailsScreen] simulate API call...');
     await Future.delayed(const Duration(seconds: 1));
+    if (!mounted) return;
 
-    if (!mounted) {
-      debugPrint('⚠️ [UsageDetailsScreen] not mounted after delay');
-      return;
-    }
-
-    debugPrint('🏁 [UsageDetailsScreen] success -> navigate Home');
     Navigator.of(context).pushNamedAndRemoveUntil(
       HomeScreen.routeName,
           (route) => false,
@@ -84,113 +70,85 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🧱 [UsageDetailsScreen] build');
+    final topInset = MediaQuery.of(context).padding.top;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
+    return BaseScaffold(
+      resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
       extendBody: true,
       backgroundColor: Colors.transparent,
-      body: GestureDetector(
+      setDarkStatusBar: true,
+
+      // ✅ Footer artık BaseScaffold içinde
+      bottom: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PrimaryButton(
+              label: 'Continue',
+              onPressed: _onContinue,
+            ),
+            const SizedBox(height: 2),
+          ],
+        ),
+      ),
+      keyboardAwareBottom: true, // ✅ klavye açılırsa footer yukarı çıkar
+
+      // ✅ content sadece içerik (scroll)
+      child: GestureDetector(
         onTap: _dismissKeyboard,
         behavior: HitTestBehavior.opaque,
         child: SkyeBackground(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Skye Logo (no back button on this screen)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 20),
-                            child: SkyeLogo(
-                              type: 'logoText',
-                              color: 'white',
-                              height: 150,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // How do you plan to use Skye?
-                        AppTextField(
-                          controller: _planToUseController,
-                          label: 'How do you plan to use Skye?',
-                          hint: 'Enter your answer',
-                          minLines: 2,
-                          maxLines: null,
-                          onChanged: (value) {
-                            debugPrint(
-                                '✍️ [UsageDetailsScreen] planToUse changed');
-                            setState(() {});
-                          },
-                        ),
-
-                        const SizedBox(height: 26),
-
-                        // What best defines your position in aviation?
-                        AppTextField(
-                          controller: _positionController,
-                          label:
-                          'What best defines your position in aviation?',
-                          hint: 'Enter your answer',
-                          minLines: 2,
-                          maxLines: null,
-                          onChanged: (value) {
-                            debugPrint(
-                                '✍️ [UsageDetailsScreen] position changed');
-                            setState(() {});
-                          },
-                        ),
-
-                        const SizedBox(height: 26),
-
-                        // How can Skye help you reach your flying goals?
-                        AppTextField(
-                          controller: _goalsController,
-                          label:
-                          'How can Skye help you reach your flying goals?',
-                          hint: 'Enter your answer',
-                          minLines: 2,
-                          maxLines: null,
-                          onChanged: (value) {
-                            debugPrint(
-                                '✍️ [UsageDetailsScreen] goals changed');
-                            setState(() {});
-                          },
-                        ),
-
-                        const Spacer(),
-
-                        SizedBox(
-                          height: MediaQuery.of(context).viewInsets.bottom > 0
-                              ? 24
-                              : 0,
-                        ),
-
-                        PrimaryButton(
-                          label: 'Continue',
-                          onPressed: _onContinue,
-                        ),
-
-                        SizedBox(
-                          height: MediaQuery.of(context).viewInsets.bottom > 0
-                              ? MediaQuery.of(context).viewInsets.bottom
-                              : 24,
-                        ),
-                      ],
-                    ),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              topInset + 10,
+              24,
+              220, // ✅ footer kaplamasın diye sabit alan
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Center(
+                  child: SkyeLogo(
+                    type: 'logoText',
+                    color: 'white',
+                    height: 150,
                   ),
                 ),
-              );
-            },
+                const SizedBox(height: 24),
+
+                AppTextField(
+                  controller: _planToUseController,
+                  label: 'How do you plan to use Skye?',
+                  hint: 'Enter your answer',
+                  minLines: 2,
+                  maxLines: null,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 24),
+
+                AppTextField(
+                  controller: _positionController,
+                  label: 'What best defines your position in aviation?',
+                  hint: 'Enter your answer',
+                  minLines: 2,
+                  maxLines: null,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 24),
+
+                AppTextField(
+                  controller: _goalsController,
+                  label: 'How can Skye help you reach your flying goals?',
+                  hint: 'Enter your answer',
+                  minLines: 2,
+                  maxLines: null,
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+            ),
           ),
         ),
       ),

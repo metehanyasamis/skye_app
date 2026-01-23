@@ -1,8 +1,12 @@
+// lib/screens/onboarding/personal_information_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import 'package:skye_app/screens/onboarding/usage_details_screen.dart';
 import 'package:skye_app/theme/app_colors.dart';
+import 'package:skye_app/utils/date_picker_helper.dart';
 import 'package:skye_app/widgets/app_text_field.dart';
+import 'package:skye_app/widgets/base_scaffold.dart';
 import 'package:skye_app/widgets/primary_button.dart';
 import 'package:skye_app/widgets/skye_background.dart';
 import 'package:skye_app/widgets/skye_logo.dart';
@@ -62,56 +66,11 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   Future<void> _selectDate() async {
     debugPrint('📅 [PersonalInformationScreen] selectDate opened');
 
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await DatePickerHelper.showThemedDatePicker(
       context: context,
-      initialDate:
-      DateTime.now().subtract(const Duration(days: 365 * 18)), // 18y
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      builder: (context, child) {
-        debugPrint('🎨 [PersonalInformationScreen] datePicker builder');
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.navy800,
-              onPrimary: AppColors.white,
-              onSurface: AppColors.navy900,
-              surface: AppColors.white,
-              onSurfaceVariant: AppColors.textPrimary,
-            ),
-            datePickerTheme: DatePickerThemeData(
-              backgroundColor: AppColors.white,
-              headerBackgroundColor: AppColors.navy800,
-              headerForegroundColor: AppColors.white,
-              dayStyle: const TextStyle(color: AppColors.navy900),
-              weekdayStyle: const TextStyle(color: AppColors.navy900),
-              yearStyle: const TextStyle(color: AppColors.navy900),
-              todayForegroundColor: WidgetStateProperty.all(AppColors.navy800),
-              dayForegroundColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return AppColors.white;
-                }
-                return AppColors.navy900;
-              }),
-              yearForegroundColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return AppColors.white;
-                }
-                return AppColors.navy900;
-              }),
-              todayBorder:
-              const BorderSide(color: AppColors.navy800, width: 1),
-              cancelButtonStyle: TextButton.styleFrom(
-                foregroundColor: AppColors.navy900,
-              ),
-              confirmButtonStyle: TextButton.styleFrom(
-                foregroundColor: AppColors.navy800,
-              ),
-            ),
-          ),
-          child: child!, // ✅ required child
-        );
-      },
     );
 
     if (picked != null) {
@@ -129,8 +88,6 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   bool _isFormValid() {
     final firstNameValid = _firstNameController.text.trim().isNotEmpty;
     final lastNameValid = _lastNameController.text.trim().isNotEmpty;
-
-    // Date optional
 
     final emailValid = _emailController.text.trim().isNotEmpty &&
         _emailController.text.contains('@');
@@ -186,210 +143,161 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   Widget build(BuildContext context) {
     debugPrint('🧱 [PersonalInformationScreen] build');
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
+    final topInset = MediaQuery.of(context).padding.top;
+
+    // footer yüksekliği kadar content alt padding bırakıyoruz
+    const footerSpace = 180.0;
+
+    return BaseScaffold(
+      resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
       extendBody: true,
       backgroundColor: Colors.transparent,
-      body: GestureDetector(
+      setDarkStatusBar: true,
+
+      // ✅ FOOTER BaseScaffold'a taşındı
+      keyboardAwareBottom: true,
+      bottom: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 18),
+        child: PrimaryButton(
+          label: 'Continue',
+          onPressed: _isFormValid() ? _onContinue : null,
+        ),
+      ),
+
+      // ✅ CONTENT sade: scroll
+      child: GestureDetector(
         onTap: _dismissKeyboard,
         behavior: HitTestBehavior.opaque,
         child: SkyeBackground(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                debugPrint(
-                                    '⬅️ [PersonalInformationScreen] back pressed');
-                                Navigator.of(context).pop();
-                              },
-                              icon: const Icon(
-                                Icons.arrow_back,
-                                color: AppColors.white,
-                              ),
-                            ),
-                            const Spacer(),
-                            const SkyeLogo(
-                              type: 'logoText',
-                              color: 'white',
-                              height: 50,
-                            ),
-                            const Spacer(),
-                            const SizedBox(width: 48),
-                          ],
-                        ),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(24, topInset + 10, 24, footerSpace),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        debugPrint('⬅️ [PersonalInformationScreen] back pressed');
+                        Navigator.of(context).pop();
+                      },
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: AppColors.white,
+                      ),
+                    ),
+                    const Spacer(),
+                    const SkyeLogo(
+                      type: 'logoText',
+                      color: 'white',
+                      height: 50,
+                    ),
+                    const Spacer(),
+                    const SizedBox(width: 48),
+                  ],
+                ),
 
-                        const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Create An Account',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // Name
-                        AppTextField(
-                          controller: _firstNameController,
-                          label: 'Name *',
-                          hint: 'Enter your name',
-                          onChanged: (value) {
-                            debugPrint(
-                                '✍️ [PersonalInformationScreen] firstName="$value"');
-                            setState(() {});
-                          },
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Last Name
-                        AppTextField(
-                          controller: _lastNameController,
-                          label: 'Last Name *',
-                          hint: 'Enter your last name',
-                          onChanged: (value) {
-                            debugPrint(
-                                '✍️ [PersonalInformationScreen] lastName="$value"');
-                            setState(() {});
-                          },
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Date of Birth (picker)
-                        GestureDetector(
-                          onTap: _selectDate,
-                          child: AbsorbPointer(
-                            child: AppTextField(
-                              controller: _dateOfBirthController,
-                              label: 'Date of Birth',
-                              hint: 'MM/DD/YYYY',
-                              onTap: _selectDate,
-                              onChanged: (value) {
-                                debugPrint(
-                                    '✍️ [PersonalInformationScreen] dob="$value"');
-                                setState(() {});
-                              },
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Email
-                        AppTextField(
-                          controller: _emailController,
-                          label: 'Email *',
-                          hint: 'Enter your email',
-                          keyboardType: TextInputType.emailAddress,
-                          onChanged: (value) {
-                            debugPrint(
-                                '✍️ [PersonalInformationScreen] email="$value"');
-                            setState(() {});
-                          },
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Password
-                        AppTextField(
-                          controller: _passwordController,
-                          label: 'Password * (minimum 6 characters)',
-                          hint: 'Enter your password',
-                          obscureText: _obscurePassword,
-                          keyboardType: TextInputType.visiblePassword,
-                          onChanged: (value) {
-                            debugPrint(
-                                '✍️ [PersonalInformationScreen] password changed (len=${value.length})');
-                            setState(() {});
-                          },
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: AppColors.textSecondary,
-                            ),
-                            onPressed: () {
-                              debugPrint(
-                                  '👁️ [PersonalInformationScreen] toggle password');
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Confirm Password
-                        AppTextField(
-                          controller: _confirmPasswordController,
-                          label: 'Confirm Password *',
-                          hint: 'Confirm your password',
-                          obscureText: _obscureConfirmPassword,
-                          keyboardType: TextInputType.visiblePassword,
-                          onChanged: (value) {
-                            debugPrint(
-                                '✍️ [PersonalInformationScreen] confirmPassword changed (len=${value.length})');
-                            setState(() {});
-                          },
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: AppColors.textSecondary,
-                            ),
-                            onPressed: () {
-                              debugPrint(
-                                  '👁️ [PersonalInformationScreen] toggle confirm password');
-                              setState(() {
-                                _obscureConfirmPassword =
-                                !_obscureConfirmPassword;
-                              });
-                            },
-                          ),
-                        ),
-
-                        const Spacer(),
-
-                        SizedBox(
-                          height: MediaQuery.of(context).viewInsets.bottom > 0
-                              ? 24
-                              : 0,
-                        ),
-
-                        PrimaryButton(
-                          label: 'Continue',
-                          onPressed: _isFormValid() ? _onContinue : null,
-                        ),
-
-                        SizedBox(
-                          height: MediaQuery.of(context).viewInsets.bottom > 0
-                              ? MediaQuery.of(context).viewInsets.bottom
-                              : 18,
-                        ),
-                      ],
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Create An Account',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
-              );
-            },
+
+                const SizedBox(height: 32),
+
+                AppTextField(
+                  controller: _firstNameController,
+                  label: 'Name *',
+                  hint: 'Enter your name',
+                  onChanged: (_) => setState(() {}),
+                ),
+
+                const SizedBox(height: 16),
+
+                AppTextField(
+                  controller: _lastNameController,
+                  label: 'Last Name *',
+                  hint: 'Enter your last name',
+                  onChanged: (_) => setState(() {}),
+                ),
+
+                const SizedBox(height: 16),
+
+                GestureDetector(
+                  onTap: _selectDate,
+                  child: AbsorbPointer(
+                    child: AppTextField(
+                      controller: _dateOfBirthController,
+                      label: 'Date of Birth',
+                      hint: 'MM/DD/YYYY',
+                      onTap: _selectDate,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                AppTextField(
+                  controller: _emailController,
+                  label: 'Email *',
+                  hint: 'Enter your email',
+                  keyboardType: TextInputType.emailAddress,
+                  onChanged: (_) => setState(() {}),
+                ),
+
+                const SizedBox(height: 16),
+
+                AppTextField(
+                  controller: _passwordController,
+                  label: 'Password * (minimum 6 characters)',
+                  hint: 'Enter your password',
+                  obscureText: _obscurePassword,
+                  keyboardType: TextInputType.visiblePassword,
+                  onChanged: (_) => setState(() {}),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                AppTextField(
+                  controller: _confirmPasswordController,
+                  label: 'Confirm Password *',
+                  hint: 'Confirm your password',
+                  obscureText: _obscureConfirmPassword,
+                  keyboardType: TextInputType.visiblePassword,
+                  onChanged: (_) => setState(() {}),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () => setState(() =>
+                    _obscureConfirmPassword = !_obscureConfirmPassword),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

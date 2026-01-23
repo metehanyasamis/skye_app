@@ -1,7 +1,10 @@
+// lib/screens/onboarding/welcome_screen.dart
 import 'package:flutter/material.dart';
+
 import 'package:skye_app/screens/login/login_phone_screen.dart';
 import 'package:skye_app/screens/onboarding/create_account_phone_screen.dart';
 import 'package:skye_app/theme/app_colors.dart';
+import 'package:skye_app/widgets/base_scaffold.dart';
 import 'package:skye_app/widgets/primary_button.dart';
 import 'package:skye_app/widgets/skye_background.dart';
 import 'package:skye_app/widgets/skye_logo.dart';
@@ -11,45 +14,58 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🧱 [WelcomeScreen] build');
+    debugPrint('🧱 [WelcomeScreen] build()');
 
     final size = MediaQuery.of(context).size;
+    final topInset = MediaQuery.of(context).padding.top;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent, // 🔥 ŞART
+    debugPrint(
+      '📐 [WelcomeScreen] size=$size topInset=$topInset bottomInset=$bottomInset keyboardInset=$keyboardInset',
+    );
+
+    return BaseScaffold(
+      backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       extendBody: true,
-      body: SkyeBackground(
+      setDarkStatusBar: true,
+      child: SkyeBackground(
         child: Stack(
+          fit: StackFit.expand,
           children: [
-            // üst logo + yazılar
-            Column(
-              children: [
-                const SizedBox(height: 80),
-                const Center(
-                  child: SkyeLogo(
-                    type: 'logoText',
-                    color: 'white',
-                    height: 50,
+            // ✅ TOP CONTENT
+            Positioned.fill(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(height: topInset + 10),
+                  const Center(
+                    child: SkyeLogo(
+                      type: 'logoText',
+                      color: 'white',
+                      height: 50,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 40),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 2, 24, 2),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'The Flight\nPlatform Bringing\nTogether the\nPilots of Today\nand Tomorrow',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 36,
-                        height: 1.2,
+                  const SizedBox(height: 50),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 2, 24, 2),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'The Flight\nPlatform Bringing\nTogether the\nPilots of Today\nand Tomorrow',
+                        style:
+                        Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 36,
+                          height: 1.2,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
 
             // ✈️ airplane
@@ -64,13 +80,20 @@ class WelcomeScreen extends StatelessWidget {
               ),
             ),
 
-            // CTA alanı
+            // ✅ CTA FOOTER (bottom safe area + keyboard aware)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(24, 2, 24, 24),
+              child: AnimatedPadding(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  top: 12,
+                  bottom: keyboardInset > 0 ? keyboardInset : (bottomInset + 24),
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -86,7 +109,6 @@ class WelcomeScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Text(
                           "Don't have an account?",
@@ -94,7 +116,9 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                         TextButton(
                           onPressed: () {
-                            debugPrint('➡️ [WelcomeScreen] go CreateAccountPhoneScreen');
+                            debugPrint(
+                              '➡️ [WelcomeScreen] go CreateAccountPhoneScreen',
+                            );
                             Navigator.of(context).pushNamed(
                               CreateAccountPhoneScreen.routeName,
                             );

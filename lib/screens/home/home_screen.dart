@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:skye_app/screens/aircraft/aircraft_listing_screen.dart';
 import 'package:skye_app/screens/cfi/cfi_listing_screen.dart';
+import 'package:skye_app/screens/notifications/notifications_screen.dart';
 import 'package:skye_app/screens/time_building/time_building_listing_screen.dart';
 import 'package:skye_app/theme/app_colors.dart';
-import 'package:skye_app/widgets/skye_logo.dart';
+import 'package:skye_app/utils/debug_logger.dart';
+import 'package:skye_app/utils/system_ui_helper.dart';
+import 'package:skye_app/widgets/common_header.dart';
+import 'package:skye_app/widgets/custom_bottom_nav_bar.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -13,94 +16,21 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🏠 [HomeScreen] build()');
-
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: Brightness.dark,
-      ),
-    );
-    debugPrint('✅ [HomeScreen] SystemChrome style applied');
+    DebugLogger.log('HomeScreen', 'build()');
+    SystemUIHelper.setLightStatusBar();
 
     return Scaffold(
       backgroundColor: AppColors.cfiBackground,
       body: Column(
         children: [
-          // Top header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(2, 12, 16, 12),
-            child: Row(
-              children: [
-                // Logo
-                const SkyeLogo(type: 'logo', color: 'blue', height: 120),
-                const SizedBox(width: 8),
-
-                // Location
-                Expanded(
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            size: 18,
-                            color: Color(0xFF8F9BB3),
-                          ),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              '1 World Wyndam...',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: const Color(0xFF8F9BB3).withValues(alpha: 0.58),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 8),
-
-                // Notification icon
-                SizedBox(
-                  width: 24,
-                  child: Stack(
-                    children: [
-                      const Icon(
-                        Icons.notifications_outlined,
-                        size: 24,
-                        color: AppColors.labelBlack,
-                      ),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          // Top header - using CommonHeader widget
+          CommonHeader(
+            locationText: '1 World Wyndam...',
+            showNotificationDot: true,
+            onNotificationTap: () {
+              DebugLogger.log('HomeScreen', 'notification tapped');
+              Navigator.of(context).pushNamed(NotificationsScreen.routeName);
+            },
           ),
 
           // Main content
@@ -327,36 +257,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // Bottom navigation bar
-          Container(
-            height: 77,
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: BottomNavigationBar(
-              currentIndex: 0,
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: AppColors.navy900,
-              unselectedItemColor: AppColors.textSecondary,
-              showSelectedLabels: true,
-              showUnselectedLabels: false,
-              onTap: (i) => debugPrint('🔽 [HomeScreen] BottomNav tap index=$i'),
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
-                BottomNavigationBarItem(icon: Icon(Icons.flight), label: 'Flights'),
-                BottomNavigationBarItem(icon: Icon(Icons.access_time), label: 'Logbook'),
-                BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-              ],
-            ),
-          ),
+          const CustomBottomNavBar(),
         ],
       ),
     );
