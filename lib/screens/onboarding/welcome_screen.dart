@@ -11,6 +11,8 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🧱 [WelcomeScreen] build');
+
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -18,25 +20,27 @@ class WelcomeScreen extends StatelessWidget {
       extendBodyBehindAppBar: true,
       extendBody: true,
       body: SkyeBackground(
-        child: SafeArea(
-          child: Stack(
-            children: [
-              // 🔹 ÜST İÇERİK (LOGO + TEXT)
-              Column(
-                children: [
-                  const SizedBox(height: 48),
-                  const Center(child: SkyeLogo()),
-                  const SizedBox(height: 48),
+        child: Stack(
+          children: [
+            // üst logo + yazılar
+            Column(
+              children: [
+                const SizedBox(height: 80),
+                const Center(
+                  child: SkyeLogo(
+                    type: 'logoText',
+                    color: 'white',
+                    height: 50,
+                  ),
+                ),
+                const SizedBox(height: 40),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
+                  padding: const EdgeInsets.fromLTRB(24, 2, 24, 2),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'The Flight\nPlatform Bringing\nTogether the\nPilots of Today\nand Tomorrow',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineLarge
-                          ?.copyWith(
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         color: AppColors.white,
                         fontWeight: FontWeight.w800,
                         fontSize: 36,
@@ -48,67 +52,69 @@ class WelcomeScreen extends StatelessWidget {
               ],
             ),
 
-            // ✈️ AIRPLANE — FLOW’DAN ÇIKTI
+            // ✈️ airplane
             Positioned(
-              top: size.height * 0.52, // 🔥 kritik satır
+              top: size.height * 0.48,
               left: 0,
               right: 0,
               child: Image.asset(
                 'assets/images/airplane.png',
-                height: 200,
+                height: 160,
                 fit: BoxFit.contain,
               ),
             ),
 
-            // 🔘 ALT CTA — İKİ AŞAMALI GİRİŞ AKIŞI
+            // CTA alanı
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
               child: Container(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
+                padding: const EdgeInsets.fromLTRB(24, 2, 24, 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Kayıtlı Kullanıcı - Log In (Primary)
                     PrimaryButton(
                       label: "Log In",
                       onPressed: () {
+                        debugPrint('➡️ [WelcomeScreen] go LoginPhoneScreen');
                         Navigator.of(context).pushNamed(
                           LoginPhoneScreen.routeName,
                         );
                       },
                     ),
                     const SizedBox(height: 16),
-                    // Yeni Kullanıcı - Sign Up (Outlined)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [Text(
+                      children: [
+                        const Text(
                           "Don't have an account?",
                           style: TextStyle(color: AppColors.textPrimary),
                         ),
                         TextButton(
                           onPressed: () {
+                            debugPrint('➡️ [WelcomeScreen] go CreateAccountPhoneScreen');
                             Navigator.of(context).pushNamed(
                               CreateAccountPhoneScreen.routeName,
                             );
                           },
-                          child: const Text('Sign Up',
+                          child: const Text(
+                            'Sign Up',
                             style: TextStyle(
-                            color: AppColors.navy800,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),),
-                        )
-                      ]
+                              color: AppColors.navy800,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
-            ],
-          ),
+          ],
         ),
       ),
     );

@@ -36,15 +36,13 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasMultipleLines = (minLines != null && minLines! > 1) || 
-                            (maxLines != null && maxLines! > 1);
-    
-    // Çok satırlı alanlar için keyboardType'ı multiline yap
-    final effectiveKeyboardType = hasMultipleLines 
-        ? TextInputType.multiline 
-        : (keyboardType ?? TextInputType.text);
-    
-    // Çok satırlı alanlar için label'ı üstte Text widget olarak göster
+    final hasMultipleLines =
+        (minLines != null && minLines! > 1) || (maxLines != null && maxLines! > 1);
+
+    final effectiveKeyboardType =
+    hasMultipleLines ? TextInputType.multiline : (keyboardType ?? TextInputType.text);
+
+    // ✅ Multi-line: label üstte ayrı Text widget
     if (hasMultipleLines) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,8 +85,8 @@ class AppTextField extends StatelessWidget {
         ],
       );
     }
-    
-    // Tek satırlı alanlar için normal label kullan
+
+    // ✅ Single-line: normal labelText
     return TextField(
       controller: controller,
       focusNode: focusNode,

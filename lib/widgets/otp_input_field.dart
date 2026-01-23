@@ -92,19 +92,6 @@ class OtpInputFieldState extends State<OtpInputField> {
     }
   }
 
-  void _onBackspace(int index) {
-    if (_controllers[index].text.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
-      _controllers[index - 1].clear();
-      _otpCode = _controllers.map((c) => c.text).join();
-      widget.onChanged(_otpCode);
-    } else {
-      _controllers[index].clear();
-      _otpCode = _controllers.map((c) => c.text).join();
-      widget.onChanged(_otpCode);
-    }
-  }
-
   void setOtpCode(String code) {
     if (code.length > widget.length) {
       code = code.substring(0, widget.length);
@@ -201,7 +188,7 @@ class OtpInputFieldState extends State<OtpInputField> {
               buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
               ),
             ),
-          ),
+        ),
         );
       }),
     );

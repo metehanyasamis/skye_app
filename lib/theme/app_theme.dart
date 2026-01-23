@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:skye_app/theme/app_colors.dart';
 
 class AppTheme {
+  static const String _fontFamily = 'WorkSans';
+
   static ThemeData get light {
+    debugPrint('🎨 [AppTheme] building light theme');
+
     final base = ThemeData.light();
+
     return base.copyWith(
       scaffoldBackgroundColor: Colors.transparent,
       colorScheme: base.colorScheme.copyWith(
@@ -13,28 +17,37 @@ class AppTheme {
         surface: AppColors.navy800,
         onSurface: AppColors.textPrimary,
       ),
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).copyWith(
-        headlineLarge: GoogleFonts.inter(
+      textTheme: base.textTheme.copyWith(
+        headlineLarge: const TextStyle(
+          fontFamily: _fontFamily,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
         ),
-        headlineMedium: GoogleFonts.inter(
+        headlineMedium: const TextStyle(
+          fontFamily: _fontFamily,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
         ),
-        titleLarge: GoogleFonts.inter(
+        titleLarge: const TextStyle(
+          fontFamily: _fontFamily,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
-        bodyLarge: GoogleFonts.inter(
+        bodyLarge: const TextStyle(
+          fontFamily: _fontFamily,
           fontWeight: FontWeight.w400,
           color: AppColors.textPrimary,
         ),
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: const TextStyle(
+          fontFamily: _fontFamily,
           fontWeight: FontWeight.w400,
           color: AppColors.textSecondary,
         ),
       ),
+
+      // ✅ burada datePickerTheme yok! (Flutter sürümünde desteklenmiyor)
+      // ✅ DatePicker styling'i showDatePicker builder içinde Theme() ile verilecek.
+
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.fieldFill,
@@ -51,34 +64,6 @@ class AppTheme {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.white),
-        ),
-      ),
-      datePickerTheme: DatePickerThemeData(
-        backgroundColor: AppColors.white,
-        headerBackgroundColor: AppColors.navy800,
-        headerForegroundColor: AppColors.white,
-        dayStyle: const TextStyle(color: AppColors.navy900),
-        weekdayStyle: const TextStyle(color: AppColors.navy900),
-        yearStyle: const TextStyle(color: AppColors.navy900),
-        todayForegroundColor: MaterialStateProperty.all(AppColors.navy800),
-        dayForegroundColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
-            return AppColors.white; // Seçili tarih için beyaz
-          }
-          return AppColors.navy900; // Normal tarihler için koyu
-        }),
-        yearForegroundColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
-            return AppColors.white; // Seçili yıl için beyaz
-          }
-          return AppColors.navy900; // Normal yıllar için koyu
-        }),
-        todayBorder: const BorderSide(color: AppColors.navy800, width: 1),
-        cancelButtonStyle: TextButton.styleFrom(
-          foregroundColor: AppColors.navy900,
-        ),
-        confirmButtonStyle: TextButton.styleFrom(
-          foregroundColor: AppColors.navy800,
         ),
       ),
     );

@@ -58,12 +58,14 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
   @override
   void initState() {
     super.initState();
+
     _selectedCountry = _countries.firstWhere(
-      (country) => country.dialCode == widget.initialCountryCode,
-      orElse: () => _countries.first, // Default to US (+1)
+          (country) => country.dialCode == widget.initialCountryCode,
+      orElse: () => _countries.first,
     );
-    // Call callback after build is complete to avoid setState during build
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('[CountryCodePicker] initState selected = ${_selectedCountry.dialCode}');
       widget.onChanged(_selectedCountry.dialCode);
     });
   }
@@ -71,9 +73,12 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showCountryPicker(context),
+      onTap: () {
+        debugPrint('[CountryCodePicker] open picker');
+        _showCountryPicker(context);
+      },
       child: Container(
-        height: 56, // Match TextField height (default TextField height is ~56)
+        height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: AppColors.fieldFill,
@@ -139,7 +144,9 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
                   itemCount: _countries.length,
                   itemBuilder: (context, index) {
                     final country = _countries[index];
-                    final isSelected = country.dialCode == _selectedCountry.dialCode;
+                    final isSelected =
+                        country.dialCode == _selectedCountry.dialCode;
+
                     return ListTile(
                       leading: Text(
                         country.flag,
@@ -149,17 +156,22 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
                         country.name,
                         style: TextStyle(
                           color: AppColors.textPrimary,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
                       trailing: Text(
                         country.dialCode,
                         style: TextStyle(
-                          color: isSelected ? AppColors.white : AppColors.textSecondary,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          color: isSelected
+                              ? AppColors.white
+                              : AppColors.textSecondary,
+                          fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
                       onTap: () {
+                        debugPrint('[CountryCodePicker] selected ${country.dialCode}');
                         setState(() {
                           _selectedCountry = country;
                         });
