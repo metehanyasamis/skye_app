@@ -1,0 +1,237 @@
+import 'package:flutter/material.dart' hide FilterChip;
+import 'package:skye_app/app/shell/tab_shell.dart';
+import 'package:skye_app/features/aircraft/aircraft_post_screen.dart';
+import 'package:skye_app/features/notifications/notifications_screen.dart';
+import 'package:skye_app/shared/theme/app_colors.dart';
+import 'package:skye_app/shared/utils/debug_logger.dart';
+import 'package:skye_app/shared/utils/system_ui_helper.dart';
+import 'package:skye_app/shared/widgets/common_header.dart';
+import 'package:skye_app/shared/widgets/aircraft_card.dart';
+import 'package:skye_app/shared/widgets/filter_chip.dart';
+import 'package:skye_app/shared/widgets/post_fab.dart';
+import 'package:skye_app/shared/widgets/section_title.dart';
+
+class AircraftListingScreen extends StatelessWidget {
+  const AircraftListingScreen({super.key});
+
+  static const routeName = '/aircraft/listing';
+
+  @override
+  Widget build(BuildContext context) {
+    DebugLogger.log('AircraftListingScreen', 'build()');
+    SystemUIHelper.setLightStatusBar();
+
+    return TabShell(
+      child: Stack(
+        children: [
+          Column(
+            children: [
+              CommonHeader(
+                locationText: '1 World Wy...',
+                onNotificationTap: () {
+                  DebugLogger.log(
+                    'AircraftListingScreen',
+                    'notification tapped',
+                  );
+                  Navigator.of(context).pushNamed(
+                    NotificationsScreen.routeName,
+                  );
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: TextField(
+                onChanged: (value) {
+                  DebugLogger.log(
+                    'AircraftListingScreen',
+                    'search changed',
+                    {'query': value},
+                  );
+                },
+                onSubmitted: (value) {
+                  DebugLogger.log(
+                    'AircraftListingScreen',
+                    'search submitted',
+                    {'query': value},
+                  );
+                },
+                decoration: InputDecoration(
+                  hintText: 'Find Aircraft for Rent/Buy',
+                  hintStyle: TextStyle(
+                    color: AppColors.labelBlack.withValues(alpha: 0.28),
+                    fontSize: 14,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.flight,
+                    color: AppColors.textSecondary,
+                    size: 24,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                ),
+              ),
+            ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    FilterChip(
+                      label: 'Rent/Buy',
+                  icon: Icons.attach_money,
+                  isSelected: true,
+                  onTap: () {
+                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
+                      'filter': 'Rent/Buy',
+                    });
+                  },
+                ),
+                const SizedBox(width: 7),
+                FilterChip(
+                  label: 'Aircraft Brand',
+                  icon: Icons.flight,
+                  isSelected: false,
+                  onTap: () {
+                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
+                      'filter': 'Aircraft Brand',
+                    });
+                  },
+                ),
+                const SizedBox(width: 7),
+                FilterChip(
+                  label: 'Aircraft Type',
+                  icon: Icons.airplanemode_active,
+                  isSelected: false,
+                  onTap: () {
+                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
+                      'filter': 'Aircraft Type',
+                    });
+                  },
+                ),
+                const SizedBox(width: 7),
+                FilterChip(
+                  label: 'State',
+                  icon: Icons.public,
+                  isSelected: false,
+                  onTap: () {
+                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
+                      'filter': 'State',
+                    });
+                  },
+                ),
+                const SizedBox(width: 7),
+                FilterChip(
+                  label: 'City',
+                  icon: Icons.location_city,
+                  isSelected: false,
+                  onTap: () {
+                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
+                      'filter': 'City',
+                    });
+                  },
+                ),
+                const SizedBox(width: 7),
+                FilterChip(
+                  label: 'Airport',
+                  icon: Icons.flight_takeoff,
+                  isSelected: false,
+                  onTap: () {
+                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
+                      'filter': 'Airport',
+                    });
+                  },
+                ),
+                const SizedBox(width: 7),
+                FilterChip(
+                  label: 'Price',
+                  icon: Icons.local_offer,
+                  isSelected: false,
+                  onTap: () {
+                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
+                      'filter': 'Price',
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Section title
+          const SectionTitle(
+            prefix: 'Top ',
+            highlighted: 'aircrafts',
+            suffix: ' around you',
+          ),
+
+          const SizedBox(height: 12),
+
+          // Aircraft list – alt padding: son kart CustomBottomNavBar altında kalmasın
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                bottom: 60 +
+                    MediaQuery.of(context).viewPadding.bottom +
+                    16,
+              ),
+              itemCount: 3,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () {
+                    DebugLogger.log(
+                      'AircraftListingScreen',
+                      'aircraft card tapped',
+                      {'index': index},
+                    );
+                  },
+                  child: const AircraftCard(
+                    name: 'AeroVena',
+                    range: '750 nm',
+                    type: 'ASEL',
+                    airport: 'KBNA',
+                    seats: '4 Seats',
+                    wetPrice: '200',
+                    dryPrice: '100',
+                  ),
+                );
+              },
+            ),
+          ),
+            ],
+          ),
+          Positioned(
+            bottom: 76,
+            right: 16,
+            child: PostFab(
+              onTap: () {
+                DebugLogger.log(
+                  'AircraftListingScreen',
+                  'Post FAB tapped -> AircraftPostScreen',
+                );
+                Navigator.of(context).pushNamed(
+                  AircraftPostScreen.routeName,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

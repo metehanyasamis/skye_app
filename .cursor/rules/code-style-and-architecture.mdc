@@ -1,0 +1,44 @@
+---
+name: code-style-and-architecture
+description: This is a new rule
+---
+
+# Overview
+
+Insert overview text here. The agent will only see this should they choose to apply the rule.
+
+code-style-and-architecture
+- use flutter best practices
+- keep widgets small and focused
+- avoid duplicated ui; extract reusable widgets
+- prefer composition over inheritance
+- keep business logic out of ui widgets
+
+ui-and-design
+- follow figma designs strictly
+- do not change spacing, colors, or typography unless requested
+- use custom widgets for repeated patterns (buttons, cards, headers)
+- animations must be subtle and performant (no jank)
+
+navigation-and-state
+- keep navigation logic centralized
+
+performance
+- avoid unnecessary rebuilds
+- use const constructors where possible
+- do not block ui thread
+- animations must be <= 300ms unless specified
+
+assets-and-theming
+- do not hardcode colors; use AppColors
+- use app typography consistently
+
+naming-and-structure
+- use lowercase_with_underscores for files
+- use clear, descriptive names
+- keep folder structure feature-based
+
+communication
+- do not refactor unless explicitly asked
+- if unsure, ask before changing architecture
+- explain only what changed and why
