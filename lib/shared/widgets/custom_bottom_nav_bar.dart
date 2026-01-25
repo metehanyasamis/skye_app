@@ -48,6 +48,12 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
     });
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   void _syncIndex() {
     final route = ModalRoute.of(context)?.settings.name;
     final index = _items.indexWhere((e) => e.route == route);

@@ -54,97 +54,79 @@ class _CreateCfiProfileScreenState extends State<CreateCfiProfileScreen> {
       bottomNavigationBar: CustomBottomNavBar(items: tabNavItems),
       children: [
         // Section header
-        const Padding(
-          padding: EdgeInsets.only(left: 4),
-          child: Text(
-            'More about you',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: AppColors.labelBlack,
-              height: 24 / 14,
-            ),
+        const Text(
+          'More about you',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: AppColors.labelBlack,
+            height: 24 / 14,
           ),
         ),
 
         const SizedBox(height: 16),
 
         // Spoken languages
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: FormFieldWithIcon(
-            label: 'Spoken languages',
-            icon: Icons.language,
-            controller: _spokenLanguagesController,
-            onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'spokenLanguages changed', {'value': v}),
-          ),
+        FormFieldWithIcon(
+          label: 'Spoken languages',
+          icon: Icons.language,
+          controller: _spokenLanguagesController,
+          onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'spokenLanguages changed', {'value': v}),
         ),
 
         const SizedBox(height: 24),
 
         // Base airport(s)
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: FormFieldWithIcon(
-            label: 'Base airport(s)',
-            icon: Icons.flight_takeoff,
-            controller: _baseAirportsController,
-            onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'baseAirports changed', {'value': v}),
-          ),
+        FormFieldWithIcon(
+          label: 'Base airport(s)',
+          icon: Icons.flight_takeoff,
+          controller: _baseAirportsController,
+          onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'baseAirports changed', {'value': v}),
         ),
 
         const SizedBox(height: 24),
 
         // License no
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: FormFieldWithIcon(
-            label: 'License no',
-            icon: Icons.badge,
-            controller: _licenseNoController,
-            onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'licenseNo changed', {'value': v}),
-          ),
+        FormFieldWithIcon(
+          label: 'License no',
+          icon: Icons.badge,
+          controller: _licenseNoController,
+          onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'licenseNo changed', {'value': v}),
         ),
 
         const SizedBox(height: 24),
 
         // Country and City side by side
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: Row(
-            children: [
-              Expanded(
-                child: FormFieldWithIcon(
-                  label: 'Country',
-                  icon: Icons.public,
-                  controller: _countryController,
-                  onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'country changed', {'value': v}),
-                ),
+        Row(
+          children: [
+            Expanded(
+              child: FormFieldWithIcon(
+                label: 'Country',
+                icon: Icons.public,
+                controller: _countryController,
+                onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'country changed', {'value': v}),
               ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: FormFieldWithIcon(
-                  label: 'City',
-                  icon: Icons.location_city,
-                  controller: _cityController,
-                  onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'city changed', {'value': v}),
-                ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: FormFieldWithIcon(
+                label: 'City',
+                icon: Icons.location_city,
+                controller: _cityController,
+                onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'city changed', {'value': v}),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
 
         const SizedBox(height: 24),
 
         // Address
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: FormFieldWithIcon(
-            label: 'Address',
-            icon: Icons.location_on,
-            controller: _addressController,
-            onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'address changed', {'value': v}),
-          ),
+        FormFieldWithIcon(
+          label: 'Address',
+          icon: Icons.location_on,
+          controller: _addressController,
+          onChanged: (v) => DebugLogger.log('CreateCfiProfileScreen', 'address changed', {'value': v}),
         ),
 
         const SizedBox(height: 40),

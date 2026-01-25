@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:skye_app/features/home/home/home_screen.dart';
+import 'package:skye_app/shared/services/auth_api_service.dart';
 import 'package:skye_app/shared/services/auth_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/widgets/app_back_button.dart';
@@ -31,11 +32,20 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
   String _otpCode = '';
   bool _isVerifying = false;
   bool _hasError = false;
+  String? _phoneNumber;
 
   @override
   void initState() {
     super.initState();
     debugPrint('🔐 [LoginVerificationScreen] initState');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    _phoneNumber = args?['phone'] as String?;
+    debugPrint('📞 [LoginVerificationScreen] phone from args: $_phoneNumber');
   }
 
   @override
@@ -61,7 +71,7 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
 
   void _onOtpCompleted() {
     debugPrint('✅ [LoginVerificationScreen] OTP completed: "$_otpCode"');
-    if (_otpCode.length == 4) {
+    if (_otpCode.length == 6) {
       _verifyCode();
     }
   }
@@ -69,8 +79,13 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
   Future<void> _verifyCode() async {
     debugPrint('🚀 [LoginVerificationScreen] verify pressed, otp="$_otpCode"');
 
-    if (_otpCode.length != 4) {
+    if (_otpCode.length != 6) {
       debugPrint('⛔ [LoginVerificationScreen] otp length invalid');
+      return;
+    }
+
+    if (_phoneNumber == null || _phoneNumber!.isEmpty) {
+      debugPrint('⛔ [LoginVerificationScreen] phone number missing');
       return;
     }
 
@@ -81,43 +96,72 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
 
     _dismissKeyboard();
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      debugPrint('🌐 [LoginVerificationScreen] calling API: phone=$_phoneNumber, code=$_otpCode');
+      
+      // Call backend API
+      final response = await AuthApiService.instance.verifyOtp(
+        phone: _phoneNumber!,
+        code: _otpCode,
+      );
 
-    if (!mounted) {
-      debugPrint('⚠️ [LoginVerificationScreen] not mounted after delay');
-      return;
-    }
+      if (!mounted) {
+        debugPrint('⚠️ [LoginVerificationScreen] not mounted after API call');
+        return;
+      }
 
-    final isValid = _otpCode == '1234';
-    debugPrint('🧪 [LoginVerificationScreen] mock isValid=$isValid');
+      if (response.success) {
+        debugPrint('✅ [LoginVerificationScreen] verification success');
+        
+        // Save login state
+        await AuthService.instance.setLoggedIn(true);
+        
+        // Navigate to home
+        Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+        return;
+      }
 
-    if (isValid) {
-      debugPrint('🏁 [LoginVerificationScreen] success -> Home');
-      await AuthService.instance.setLoggedIn(true);
-      if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
-      return;
-    }
+      // Verification failed
+      debugPrint('❌ [LoginVerificationScreen] verification failed');
+      HapticFeedback.mediumImpact();
 
-    debugPrint('❌ [LoginVerificationScreen] invalid code -> error UI');
-    HapticFeedback.mediumImpact();
+      _otpInputKey.currentState?.setOtpCode('');
 
-    _otpInputKey.currentState?.setOtpCode('');
-
-    setState(() {
-      _isVerifying = false;
-      _hasError = true;
-      _otpCode = '';
-    });
-
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (!mounted) return;
-      debugPrint('🔁 [LoginVerificationScreen] reset error state');
       setState(() {
-        _hasError = false;
+        _isVerifying = false;
+        _hasError = true;
+        _otpCode = '';
       });
-    });
+
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        setState(() {
+          _hasError = false;
+        });
+      });
+      
+    } catch (e) {
+      debugPrint('❌ [LoginVerificationScreen] verification error: $e');
+      
+      if (!mounted) return;
+      
+      HapticFeedback.mediumImpact();
+
+      _otpInputKey.currentState?.setOtpCode('');
+
+      setState(() {
+        _isVerifying = false;
+        _hasError = true;
+        _otpCode = '';
+      });
+
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        setState(() {
+          _hasError = false;
+        });
+      });
+    }
   }
 
   @override
@@ -183,7 +227,7 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
 
                         OtpInputField(
                           key: _otpInputKey,
-                          length: 4,
+                          length: 6,
                           onChanged: _onOtpChanged,
                           onCompleted: _onOtpCompleted,
                         ),
@@ -197,18 +241,18 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
                             keyboardType: TextInputType.number,
                             autofillHints: const [AutofillHints.oneTimeCode],
                             textInputAction: TextInputAction.done,
-                            maxLength: 4,
+                            maxLength: 6,
                             // ❗ const kaldırıldı (FilteringTextInputFormatter const değil)
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(4),
+                              LengthLimitingTextInputFormatter(6),
                             ],
                             onChanged: (value) {
                               debugPrint(
                                   '📩 [LoginVerificationScreen] sms changed: "$value"');
-                              if (value.length == 4) {
+                              if (value.length == 6) {
                                 debugPrint(
-                                    '📩 [LoginVerificationScreen] sms 4 digits -> fill otp');
+                                    '📩 [LoginVerificationScreen] sms 6 digits -> fill otp');
                                 _otpInputKey.currentState?.setOtpCode(value);
                                 setState(() {
                                   _otpCode = value;
@@ -243,7 +287,7 @@ class _LoginVerificationScreenState extends State<LoginVerificationScreen> {
                               _hasError = false;
                             });
                           }
-                              : (_otpCode.length == 4 ? _verifyCode : null),
+                              : (_otpCode.length == 6 ? _verifyCode : null),
                           child: _isVerifying
                               ? const SizedBox(
                             width: 16,

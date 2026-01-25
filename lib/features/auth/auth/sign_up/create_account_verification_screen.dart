@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:skye_app/features/auth/auth/sign_up/personal_information_screen.dart';
+import 'package:skye_app/shared/services/auth_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/widgets/app_back_button.dart';
 import 'package:skye_app/shared/widgets/base_scaffold.dart';
@@ -56,11 +57,16 @@ class _CreateAccountVerificationScreenState
   });
 
   void _onOtpCompleted() {
-    if (_otpCode.length == 4) _verifyCode();
+    if (_otpCode.length == 6) _verifyCode();
   }
 
   Future<void> _verifyCode() async {
-    if (_otpCode.length != 4) return;
+    if (_otpCode.length != 6) return;
+    
+    if (_phoneNumber == null || _phoneNumber!.isEmpty) {
+      debugPrint('⛔ [CreateAccountVerificationScreen] phone number missing');
+      return;
+    }
 
     setState(() {
       _isVerifying = true;
@@ -68,31 +74,64 @@ class _CreateAccountVerificationScreenState
     });
 
     _dismissKeyboard();
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
 
-    final isValid = _otpCode == '1234';
-    if (isValid) {
-      Navigator.of(context).pushReplacementNamed(
-        PersonalInformationScreen.routeName,
-        arguments: {'phone': _phoneNumber ?? ''},
+    try {
+      debugPrint('🌐 [CreateAccountVerificationScreen] verifying OTP: phone=$_phoneNumber, code=$_otpCode');
+      
+      // Verify OTP with backend
+      final response = await AuthApiService.instance.verifyOtp(
+        phone: _phoneNumber!,
+        code: _otpCode,
       );
-      return;
-    }
 
-    HapticFeedback.mediumImpact();
-    _otpInputKey.currentState?.setOtpCode('');
-
-    setState(() {
-      _isVerifying = false;
-      _hasError = true;
-      _otpCode = '';
-    });
-
-    Future.delayed(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
-      setState(() => _hasError = false);
-    });
+
+      if (response.success) {
+        debugPrint('✅ [CreateAccountVerificationScreen] OTP verified successfully');
+        
+        // Navigate to personal information screen
+        Navigator.of(context).pushReplacementNamed(
+          PersonalInformationScreen.routeName,
+          arguments: {'phone': _phoneNumber ?? ''},
+        );
+        return;
+      }
+
+      // Verification failed
+      debugPrint('❌ [CreateAccountVerificationScreen] OTP verification failed');
+      HapticFeedback.mediumImpact();
+      _otpInputKey.currentState?.setOtpCode('');
+
+      setState(() {
+        _isVerifying = false;
+        _hasError = true;
+        _otpCode = '';
+      });
+
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        setState(() => _hasError = false);
+      });
+      
+    } catch (e) {
+      debugPrint('❌ [CreateAccountVerificationScreen] verification error: $e');
+      
+      if (!mounted) return;
+      
+      HapticFeedback.mediumImpact();
+      _otpInputKey.currentState?.setOtpCode('');
+
+      setState(() {
+        _isVerifying = false;
+        _hasError = true;
+        _otpCode = '';
+      });
+
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        setState(() => _hasError = false);
+      });
+    }
   }
 
   @override
@@ -117,7 +156,7 @@ class _CreateAccountVerificationScreenState
               ? null
               : _hasError
               ? () => setState(() => _hasError = false)
-              : (_otpCode.length == 4 ? _verifyCode : null),
+              : (_otpCode.length == 6 ? _verifyCode : null),
           child: _isVerifying
               ? const SizedBox(
             width: 16,
@@ -174,7 +213,7 @@ class _CreateAccountVerificationScreenState
 
                 OtpInputField(
                   key: _otpInputKey,
-                  length: 4,
+                  length: 6,
                   onChanged: _onOtpChanged,
                   onCompleted: _onOtpCompleted,
                 ),
@@ -189,13 +228,13 @@ class _CreateAccountVerificationScreenState
                     keyboardType: TextInputType.number,
                     autofillHints: const [AutofillHints.oneTimeCode],
                     textInputAction: TextInputAction.done,
-                    maxLength: 4,
+                    maxLength: 6,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
+                      LengthLimitingTextInputFormatter(6),
                     ],
                     onChanged: (value) {
-                      if (value.length == 4) {
+                      if (value.length == 6) {
                         _otpInputKey.currentState?.setOtpCode(value);
                         setState(() {
                           _otpCode = value;

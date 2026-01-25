@@ -88,7 +88,7 @@ class CfiCard extends StatelessWidget {
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(50),
                           border: Border.all(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: AppColors.borderBlack10,
                             width: 1,
                           ),
                         ),
@@ -98,7 +98,7 @@ class CfiCard extends StatelessWidget {
                             Icon(
                               Icons.check_circle,
                               size: 10,
-                              color: Color(0xFF011A44),
+                              color: AppColors.primaryNavy,
                             ),
                             SizedBox(width: 4),
                             Text(
@@ -106,7 +106,7 @@ class CfiCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.normal,
-                                color: Color(0xFF011A44),
+                                color: AppColors.primaryNavy,
                               ),
                             ),
                           ],
@@ -128,7 +128,7 @@ class CfiCard extends StatelessWidget {
                             const Icon(
                               Icons.star,
                               size: 12,
-                              color: Color(0xFF011A44),
+                              color: AppColors.primaryNavy,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -136,7 +136,7 @@ class CfiCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.normal,
-                                color: Color(0xFF011A44),
+                                color: AppColors.primaryNavy,
                               ),
                             ),
                           ],
@@ -233,7 +233,7 @@ class CfiCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF011A44),
+                              color: AppColors.primaryNavy,
                             ),
                             children: [
                               TextSpan(text: '$hourlyRate\$/'),

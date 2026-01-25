@@ -39,6 +39,10 @@ class AppColors {
   static const cardLight = Color(0xFFE8EEF6); // Açık kart
   static const borderLight = Color(0xFFE1E7F0); // Açık kenarlık
   static const selectedBlue = Color(0xFF346A9A); // Seçili mavi (primaryBlue)
+  static const primaryNavy = Color(0xFF011A44); // Primary navy (CFI card badges)
+  static const borderBlack10 = Color(0x1A000000); // Black with 10% opacity (border)
+  static const shadowBlack4 = Color(0x0A000000); // Black with 4% opacity (shadow)
+  static const placeholderBg = Color(0xFFF0F4F8); // Placeholder background
   
   // Additional colors
   static const redDot = Color(0xFFFF0000); // Kırmızı nokta (bildirim)

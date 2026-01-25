@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import 'package:skye_app/features/auth/auth/sign_up/create_account_phone_screen.dart';
 import 'package:skye_app/features/home/home/home_screen.dart';
+import 'package:skye_app/shared/services/auth_api_service.dart';
 import 'package:skye_app/shared/services/auth_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/phone_number_formatter.dart';
@@ -77,44 +78,52 @@ class _LoginPhoneScreenState extends State<LoginPhoneScreen> {
 
     _dismissKeyboard();
 
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // Build full phone number with country code
+      final fullPhone = '$_countryCode$digits';
+      
+      debugPrint('🌐 [LoginPhoneScreen] calling API: phone=$fullPhone');
+      
+      // Call backend API
+      final response = await AuthApiService.instance.login(
+        phone: fullPhone,
+        password: pass,
+      );
 
-    if (!mounted) {
-      debugPrint('⚠️ [LoginPhoneScreen] not mounted after delay');
-      return;
-    }
-
-    final isValid = digits == '5555555555' && pass == '1234';
-    debugPrint('✅ [LoginPhoneScreen] mock isValid=$isValid');
-
-    if (isValid) {
-      debugPrint('➡️ [LoginPhoneScreen] navigate /home');
-      try {
-        await AuthService.instance.setLoggedIn(true);
-      } catch (e) {
-        debugPrint('⚠️ [LoginPhoneScreen] setLoggedIn failed: $e');
+      if (!mounted) {
+        debugPrint('⚠️ [LoginPhoneScreen] not mounted after API call');
+        return;
       }
-      if (!mounted) return;
+
+      debugPrint('✅ [LoginPhoneScreen] login success: token=${response.token != null}');
+      
+      // Save login state
+      await AuthService.instance.setLoggedIn(true);
+      
+      // Navigate to home
       Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
-      return;
-    }
-
-    debugPrint('❌ [LoginPhoneScreen] invalid login -> error UI');
-    HapticFeedback.mediumImpact();
-
-    setState(() {
-      _isLoggingIn = false;
-      _hasError = true;
-      _passwordController.clear();
-    });
-
-    Future.delayed(const Duration(milliseconds: 1500), () {
+      
+    } catch (e) {
+      debugPrint('❌ [LoginPhoneScreen] login error: $e');
+      
       if (!mounted) return;
-      debugPrint('🔁 [LoginPhoneScreen] reset error state');
+      
+      HapticFeedback.mediumImpact();
+
       setState(() {
-        _hasError = false;
+        _isLoggingIn = false;
+        _hasError = true;
+        _passwordController.clear();
       });
-    });
+
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        debugPrint('🔁 [LoginPhoneScreen] reset error state');
+        setState(() {
+          _hasError = false;
+        });
+      });
+    }
   }
 
   bool get _canSubmit {

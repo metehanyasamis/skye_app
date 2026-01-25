@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 
 import 'package:skye_app/features/auth/auth/sign_up/create_account_verification_screen.dart';
+import 'package:skye_app/shared/services/auth_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
+import 'package:skye_app/app/routes/app_routes.dart';
 import 'package:skye_app/shared/utils/phone_number_formatter.dart';
 import 'package:skye_app/shared/widgets/app_back_button.dart';
 import 'package:skye_app/shared/widgets/app_text_field.dart';
@@ -26,6 +28,9 @@ class _CreateAccountPhoneScreenState extends State<CreateAccountPhoneScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final FocusNode _phoneFocusNode = FocusNode();
   String _countryCode = '+1';
+  bool _isSending = false;
+  bool _hasError = false;
+  String _errorMessage = 'Failed to send code. Tap to retry';
 
   @override
   void dispose() {
@@ -36,16 +41,65 @@ class _CreateAccountPhoneScreenState extends State<CreateAccountPhoneScreen> {
 
   void _dismissKeyboard() => FocusScope.of(context).unfocus();
 
-  void _onContinue() {
+  Future<void> _onContinue() async {
     _dismissKeyboard();
 
     final phoneDigits = PhoneNumberFormatter.getDigitsOnly(_phoneController.text);
     final fullPhone = '$_countryCode$phoneDigits';
 
-    Navigator.of(context).pushNamed(
-      CreateAccountVerificationScreen.routeName,
-      arguments: {'phone': fullPhone},
-    );
+    if (phoneDigits.length < 10) {
+      return;
+    }
+
+    setState(() {
+      _isSending = true;
+      _hasError = false;
+    });
+
+    try {
+      debugPrint('📱 [CreateAccountPhoneScreen] sending OTP to: $fullPhone');
+      
+      // Send OTP to phone number
+      await AuthApiService.instance.sendOtp(phone: fullPhone);
+      
+      if (!mounted) return;
+      
+      debugPrint('✅ [CreateAccountPhoneScreen] OTP sent successfully');
+      
+      // Navigate to verification screen
+      Navigator.of(context).pushNamed(
+        CreateAccountVerificationScreen.routeName,
+        arguments: {'phone': fullPhone},
+      );
+      
+    } catch (e) {
+      debugPrint('❌ [CreateAccountPhoneScreen] send OTP error: $e');
+      
+      if (!mounted) return;
+      
+      String errorMessage = 'Failed to send code. Tap to retry';
+      if (e is ApiError) {
+        errorMessage = e.message;
+        // If phone is already registered, suggest login
+        if (e.message.toLowerCase().contains('already registered')) {
+          errorMessage = 'This phone number is already registered. Please log in instead.';
+        }
+      }
+      
+      setState(() {
+        _isSending = false;
+        _hasError = true;
+        _errorMessage = errorMessage;
+      });
+      
+      // Auto-reset error after 3 seconds
+      Future.delayed(const Duration(milliseconds: 3000), () {
+        if (!mounted) return;
+        setState(() {
+          _hasError = false;
+        });
+      });
+    }
   }
 
   @override
@@ -69,8 +123,38 @@ class _CreateAccountPhoneScreenState extends State<CreateAccountPhoneScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             PrimaryButton(
-              label: 'Continue',
-              onPressed: canContinue ? _onContinue : null,
+              label: _isSending
+                  ? ''
+                  : (_hasError
+                      ? _errorMessage
+                      : 'Continue'),
+              onPressed: _isSending
+                  ? null
+                  : (_hasError
+                      ? () {
+                          // If phone is already registered, navigate to login
+                          if (_errorMessage.toLowerCase().contains('already registered')) {
+                            Navigator.of(context).pushReplacementNamed(AppRoutes.loginPhone);
+                            return;
+                          }
+                          setState(() {
+                            _hasError = false;
+                          });
+                          _onContinue();
+                        }
+                      : (canContinue ? _onContinue : null)),
+              child: _isSending
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.white,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(height: 24),
             Row(

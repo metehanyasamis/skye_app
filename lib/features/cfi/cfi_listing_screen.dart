@@ -13,7 +13,6 @@ import 'package:skye_app/shared/widgets/common_header.dart';
 import 'package:skye_app/shared/widgets/cfi_card.dart';
 import 'package:skye_app/shared/widgets/filter_chip.dart';
 import 'package:skye_app/shared/widgets/post_fab.dart';
-import 'package:skye_app/shared/widgets/section_title.dart';
 
 class CfiListingScreen extends StatelessWidget {
   const CfiListingScreen({super.key});
@@ -65,6 +64,10 @@ class CfiListingScreen extends StatelessWidget {
                     {'query': v},
                   );
                 },
+                style: const TextStyle(
+                  color: AppColors.labelBlack,
+                  fontSize: 14,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Find by name, city, airport',
                   hintStyle: TextStyle(
@@ -76,7 +79,11 @@ class CfiListingScreen extends StatelessWidget {
                     color: AppColors.textSecondary,
                     size: 24,
                   ),
+                  filled: true,
+                  fillColor: AppColors.white,
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -166,11 +173,30 @@ class CfiListingScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Section title
-          const SectionTitle(
-            prefix: 'Top ',
-            highlighted: 'CFI\'s',
-            suffix: ' around you',
+          // Section title - left aligned
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: RichText(
+                textAlign: TextAlign.left,
+                text: const TextSpan(
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.labelBlack,
+                  ),
+                  children: [
+                    TextSpan(text: 'Top '),
+                    TextSpan(
+                      text: 'CFI\'s',
+                      style: TextStyle(color: Color(0xFF007BA7)),
+                    ),
+                    TextSpan(text: ' around you'),
+                  ],
+                ),
+              ),
+            ),
           ),
 
           const SizedBox(height: 12),

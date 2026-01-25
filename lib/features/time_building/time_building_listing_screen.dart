@@ -12,7 +12,6 @@ import 'package:skye_app/shared/widgets/common_header.dart';
 import 'package:skye_app/shared/widgets/filter_chip.dart';
 import 'package:skye_app/shared/widgets/post_fab.dart';
 import 'package:skye_app/shared/widgets/safety_pilot_card.dart';
-import 'package:skye_app/shared/widgets/section_title.dart';
 
 class TimeBuildingListingScreen extends StatelessWidget {
   const TimeBuildingListingScreen({super.key});
@@ -43,32 +42,53 @@ class TimeBuildingListingScreen extends StatelessWidget {
                 },
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
                   height: 38,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
+                  child: TextField(
+                    onChanged: (value) {
+                      DebugLogger.log(
+                        'TimeBuildingListingScreen',
+                        'search changed',
+                        {'query': value},
+                      );
+                    },
+                    onSubmitted: (value) {
+                      DebugLogger.log(
+                        'TimeBuildingListingScreen',
+                        'search submitted',
+                        {'query': value},
+                      );
+                    },
+                    style: const TextStyle(
+                      color: AppColors.labelBlack,
+                      fontSize: 14,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Find Aircraft for Rent/Buy',
+                      hintStyle: TextStyle(
+                        color: AppColors.labelBlack.withValues(alpha: 0.28),
+                        fontSize: 14,
+                      ),
+                      prefixIcon: const Icon(
                         Icons.search,
+                        color: AppColors.textSecondary,
                         size: 24,
-                        color: Color(0xFF222222),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Find Aircraft for Rent/Buy',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: const Color(0xFF222222).withValues(alpha: 0.28),
-                          ),
-                        ),
+                      filled: true,
+                      fillColor: AppColors.white,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -173,16 +193,29 @@ class TimeBuildingListingScreen extends StatelessWidget {
               ),
             ),
               const SizedBox(height: 20),
+              // Section title - left aligned
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    const SectionTitle(
-                      prefix: 'Top ',
-                      highlighted: 'safety pilots',
-                      suffix: ' around you',
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: RichText(
+                    textAlign: TextAlign.left,
+                    text: const TextSpan(
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.labelBlack,
+                      ),
+                      children: [
+                        TextSpan(text: 'Top '),
+                        TextSpan(
+                          text: 'safety pilots',
+                          style: TextStyle(color: Color(0xFF007BA7)),
+                        ),
+                        TextSpan(text: ' around you'),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: 16),

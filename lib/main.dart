@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:skye_app/app/app.dart';
+import 'package:skye_app/app.dart';
+import 'package:skye_app/shared/services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint('[main] ensureInitialized ✅');
+
+  // Initialize API service
+  ApiService.instance.init();
+  debugPrint('[main] ApiService initialized ✅');
 
   // FULL EDGE-TO-EDGE
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);

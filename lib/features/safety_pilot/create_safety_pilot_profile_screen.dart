@@ -53,22 +53,6 @@ class _CreateSafetyPilotProfileScreenState
       totalSteps: 4,
       children: [
 
-            // Section header
-            const Padding(
-              padding: EdgeInsets.only(left: 4),
-              child: Text(
-                'More about you',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.labelBlack,
-                  height: 24 / 14,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
         // Section header
         const Padding(
           padding: EdgeInsets.only(left: 4),
