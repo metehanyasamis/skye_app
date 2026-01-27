@@ -15,6 +15,12 @@ class AppColors {
   static const blue500 = Color(0xFF346A9A); // Ana mavi (primaryBlue)
   static const blue400 = Color(0xFF4A7BA8); // Açık mavi
   static const blue300 = Color(0xFF5F8BB5); // Daha açık mavi
+  static const blueBright = Color(0xFF007BA7); // Parlak mavi (home screen, buttons)
+  static const blueInfo = Color(0xFF0085FF); // Bilgi mavisi (info card border)
+  static const blueInfoLight = Color(0xFFA1BFFF); // Açık bilgi mavisi (info card background)
+  static const blueGradientLight = Color(0xFF53A5D4); // Gradient açık mavi
+  static const blueGradientTop = Color(0xFF4A688C); // Gradient üst (shortcut cards)
+  static const blueGradientBottom = Color(0xFF7CA6CC); // Gradient alt (shortcut cards)
 
   // Background colors
   static const sky100 = Color(0xFFE9EEF5); // Açık mavi-gri arka plan
@@ -25,6 +31,8 @@ class AppColors {
   static const textPrimary = Color(0xFFF2F5F9); // Birincil metin (açık)
   static const textSecondary = Color(0xFFB7C4D6); // İkincil metin
   static const textGray = Color(0xFFC4C4C4); // Gri metin
+  static const textGrayMedium = Color(0xFF838383); // Orta gri metin (instructor cards)
+  static const textGrayLight = Color(0xFF8F9BB3); // Açık gri metin (section titles, subtitles)
   static const labelBlack = Color(0xFF12121D); // Siyah etiket
   static const labelBlack60 = Color(0x9912121D); // %60 opak siyah
   static const labelDarkSecondary = Color(0x752B4E71); // %75 opak koyu mavi
@@ -43,6 +51,7 @@ class AppColors {
   static const borderBlack10 = Color(0x1A000000); // Black with 10% opacity (border)
   static const shadowBlack4 = Color(0x0A000000); // Black with 4% opacity (shadow)
   static const placeholderBg = Color(0xFFF0F4F8); // Placeholder background
+  static const placeholderGray = Color(0xFFD9D9D9); // Placeholder gri (instructor card, profile placeholders)
   
   // Additional colors
   static const redDot = Color(0xFFFF0000); // Kırmızı nokta (bildirim)

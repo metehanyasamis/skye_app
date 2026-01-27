@@ -10,6 +10,10 @@ void main() async {
   // Initialize API service
   ApiService.instance.init();
   debugPrint('[main] ApiService initialized ✅');
+  
+  // Restore auth token from SharedPreferences
+  await ApiService.instance.restoreAuthToken();
+  debugPrint('[main] Auth token restored ✅');
 
   // FULL EDGE-TO-EDGE
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);

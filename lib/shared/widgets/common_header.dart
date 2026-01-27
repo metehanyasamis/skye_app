@@ -10,7 +10,7 @@ class CommonHeader extends StatelessWidget {
     this.locationText = '1 World Wy...',
     this.onNotificationTap,
     this.showNotificationDot = false,
-    this.logoHeight = 50,
+    this.logoHeight = 45,
     this.padding,
   });
 
@@ -51,7 +51,7 @@ class CommonHeader extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.cardLight,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Row(
@@ -70,7 +70,7 @@ class CommonHeader extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             GestureDetector(
               onTap: onNotificationTap,
               child: Container(

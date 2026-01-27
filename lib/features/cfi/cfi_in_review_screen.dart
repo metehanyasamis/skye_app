@@ -156,25 +156,21 @@ class CfiInReviewScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 60),
-
-            // Go To Homepage button
-            Builder(
-              builder: (context) {
-                debugPrint('🏠 [CfiInReviewScreen] Go To Homepage button built');
-                return PrimaryButton(
-                  label: 'Go To Homepage',
-                  onPressed: () {
-                    debugPrint('🏠 [CfiInReviewScreen] Go To Homepage pressed');
-                    Navigator.of(context).pushReplacementNamed(
-                      HomeScreen.routeName,
-                    );
-                  },
-                );
-              },
-            ),
-
-            const SizedBox(height: 40),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+          child: PrimaryButton(
+            label: 'Go To Homepage',
+            onPressed: () {
+              debugPrint('🏠 [CfiInReviewScreen] Go To Homepage pressed');
+              Navigator.of(context).pushReplacementNamed(
+                HomeScreen.routeName,
+              );
+            },
+          ),
         ),
       ),
     );

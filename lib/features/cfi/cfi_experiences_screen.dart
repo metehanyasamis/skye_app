@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skye_app/features/cfi/cfi_summary_screen.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
 import 'package:skye_app/shared/widgets/base_form_screen.dart';
@@ -25,10 +26,80 @@ class _CfiExperiencesScreenState extends State<CfiExperiencesScreen> {
     AircraftExperience(type: 'DA-40', hours: ''),
   ];
 
+  Map<String, dynamic> _formData = {};
+  bool _hasLoadedFormData = false;
+
   @override
   void initState() {
     super.initState();
     debugPrint('🧑‍✈️ [CfiExperiencesScreen] initState');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Get form data from previous screens - must be in didChangeDependencies, not initState
+    if (!_hasLoadedFormData) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        _formData = Map<String, dynamic>.from(args);
+        _hasLoadedFormData = true;
+      }
+    }
+  }
+
+  Future<void> _showAircraftTypeDialog() async {
+    // TODO: Load aircraft types from backend
+    final allAircraftTypes = ['C172', 'PA-28', 'DA-40', 'C152', 'SR20', 'SR22']; // Placeholder
+    
+    // Filter out already selected aircraft types
+    final selectedTypes = _aircraftExperiences.map((e) => e.type).toSet();
+    final availableTypes = allAircraftTypes.where((type) => !selectedTypes.contains(type)).toList();
+    
+    if (availableTypes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All available aircraft types have been added'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
+    final selectedType = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Select Aircraft Type',
+          style: TextStyle(color: AppColors.labelBlack),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableTypes.length,
+            itemBuilder: (context, index) {
+              final type = availableTypes[index];
+              return ListTile(
+                title: Text(
+                  type,
+                  style: const TextStyle(color: AppColors.labelBlack),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop(type);
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    if (selectedType != null) {
+      setState(() {
+        _aircraftExperiences.add(AircraftExperience(type: selectedType, hours: ''));
+      });
+    }
   }
 
   @override
@@ -56,8 +127,7 @@ class _CfiExperiencesScreenState extends State<CfiExperiencesScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.only(left: 2),
+        Center(
           child: HourlyRateSelector(
             selectedRate: _totalFlightHours,
             onRateSelected: (rate) {
@@ -85,8 +155,7 @@ class _CfiExperiencesScreenState extends State<CfiExperiencesScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.only(left: 2),
+        Center(
           child: HourlyRateSelector(
             selectedRate: _totalGivenHours,
             onRateSelected: (rate) {
@@ -114,8 +183,7 @@ class _CfiExperiencesScreenState extends State<CfiExperiencesScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.only(left: 2),
+        Center(
           child: HourlyRateSelector(
             selectedRate: _last12MonthsDualHours,
             onRateSelected: (rate) {
@@ -173,9 +241,7 @@ class _CfiExperiencesScreenState extends State<CfiExperiencesScreen> {
           child: TextButton(
             onPressed: () {
               DebugLogger.log('CfiExperiencesScreen', 'Add More pressed');
-              setState(() {
-                _aircraftExperiences.add(AircraftExperience(type: '', hours: ''));
-              });
+              _showAircraftTypeDialog();
             },
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,
@@ -217,7 +283,25 @@ class _CfiExperiencesScreenState extends State<CfiExperiencesScreen> {
               'last12MonthsDualHours': _last12MonthsDualHours,
               'aircraftExperiences': _aircraftExperiences.map((e) => {'type': e.type, 'hours': e.hours}).toList(),
             });
-            // TODO: Navigate to next step
+            
+            // Collect all form data from previous screens
+            final formData = <String, dynamic>{
+              ..._formData,
+              'total_flight_hours_exp': _totalFlightHours.toString(),
+              'total_given_hours': _totalGivenHours.toString(),
+              'last_12_months_dual_hours': _last12MonthsDualHours.toString(),
+              'aircraft_experiences': _aircraftExperiences
+                  .where((e) => e.type.isNotEmpty && e.hours.isNotEmpty)
+                  .map((e) => {'type': e.type, 'hours': e.hours})
+                  .toList(),
+            };
+            
+            // Navigate to summary screen
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => CfiSummaryScreen(formData: formData),
+              ),
+            );
           },
         ),
 
@@ -291,47 +375,71 @@ class _AircraftExperienceRowState extends State<_AircraftExperienceRow> {
           ),
           const SizedBox(width: 8),
 
-          // Hours input field
+          // Spacer to center the input field
           Expanded(
-            child: Container(
-              height: 27,
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.labelBlack,
-                  width: 1,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Hours input field - centered
+                SizedBox(
+                  width: 80,
+                  child: TextField(
+                    controller: _controller,
+                    textAlign: TextAlign.center,
+                    onChanged: (v) {
+                      debugPrint('⌨️ [_AircraftExperienceRow] type="${widget.aircraftType}" hours changed -> "$v"');
+                      widget.onHoursChanged(v);
+                    },
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.labelBlack,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: AppColors.white,
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: AppColors.labelBlack,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: AppColors.labelBlack,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: AppColors.selectedBlue,
+                          width: 1.5,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      isDense: true,
+                    ),
+                  ),
                 ),
-              ),
-              child: TextField(
-                controller: _controller,
-                onChanged: (v) {
-                  debugPrint('⌨️ [_AircraftExperienceRow] type="${widget.aircraftType}" hours changed -> "$v"');
-                  widget.onHoursChanged(v);
-                },
-                keyboardType: TextInputType.number,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.labelBlack,
-                ),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                ),
-              ),
+              ],
             ),
           ),
 
           const SizedBox(width: 8),
 
-          // "hours" label
-          Text(
-            'hours',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.normal,
-              color: AppColors.labelDarkSecondary.withValues(alpha: 0.5),
-              height: 24 / 14,
+          // "hours" label - right aligned
+          SizedBox(
+            width: 60,
+            child: Text(
+              'hours',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.normal,
+                color: AppColors.labelDarkSecondary.withValues(alpha: 0.5),
+                height: 24 / 14,
+              ),
             ),
           ),
         ],

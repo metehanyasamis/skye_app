@@ -243,7 +243,7 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
                     TextSpan(text: 'Top '),
                     TextSpan(
                       text: 'aircrafts',
-                      style: TextStyle(color: Color(0xFF007BA7)),
+                      style: const TextStyle(color: AppColors.blueBright),
                     ),
                     TextSpan(text: ' around you'),
                   ],

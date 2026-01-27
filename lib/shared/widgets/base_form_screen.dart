@@ -51,17 +51,27 @@ class BaseFormScreen extends StatelessWidget {
           },
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.only(
-          left: 32,
-          right: 32,
-          bottom: bottomNavigationBar != null
-              ? 24 + MediaQuery.of(context).viewPadding.bottom
-              : 0,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: GestureDetector(
+        onTap: () {
+          // Dismiss keyboard when tapping outside
+          FocusScope.of(context).unfocus();
+        },
+          child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: 32,
+            right: 32,
+            bottom: bottomNavigationBar != null
+                ? 24 + MediaQuery.of(context).viewPadding.bottom
+                : 0,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 600, // Max width for centering on larger screens
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
             const SizedBox(height: 10),
 
             // Progress indicator
@@ -107,6 +117,9 @@ class BaseFormScreen extends StatelessWidget {
             // Form fields
             ...children,
           ],
+        ),
+      ),
+      ),
         ),
       ),
       bottomNavigationBar: bottomNavigationBar,

@@ -17,6 +17,10 @@ class FormFieldWithIcon extends StatelessWidget {
     this.onChanged,
     this.onTap,
     this.readOnly = false,
+    this.fillColor,
+    this.isRequired = false,
+    this.minLines,
+    this.maxLines,
   });
 
   final String label;
@@ -28,15 +32,22 @@ class FormFieldWithIcon extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onTap;
   final bool readOnly;
+  final Color? fillColor; // Optional fill color override
+  final bool isRequired; // Show asterisk if required
+  final int? minLines; // For multi-line fields
+  final int? maxLines; // For multi-line fields
 
   @override
   Widget build(BuildContext context) {
     return AppTextField(
-      label: label,
+      label: isRequired ? '$label *' : label,
       hint: hint,
       controller: controller,
       focusNode: focusNode,
       keyboardType: keyboardType,
+      fillColor: fillColor,
+      minLines: minLines,
+      maxLines: maxLines,
       onChanged: (value) {
         DebugLogger.log('FormFieldWithIcon', 'changed', {
           'label': label,

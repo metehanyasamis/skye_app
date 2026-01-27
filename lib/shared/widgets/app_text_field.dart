@@ -20,6 +20,7 @@ class AppTextField extends StatelessWidget {
     this.onTap,
     this.inputFormatters,
     this.readOnly = false,
+    this.fillColor,
   });
 
   final String label;
@@ -37,6 +38,7 @@ class AppTextField extends StatelessWidget {
   final VoidCallback? onTap;
   final List<TextInputFormatter>? inputFormatters;
   final bool readOnly;
+  final Color? fillColor; // Optional fill color override
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +58,7 @@ class AppTextField extends StatelessWidget {
             child: Text(
               label,
               style: const TextStyle(
-                color: AppColors.textPrimary,
+                color: AppColors.labelBlack,
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
@@ -78,7 +80,7 @@ class AppTextField extends StatelessWidget {
             readOnly: readOnly,
             textInputAction: TextInputAction.newline,
             textAlignVertical: TextAlignVertical.top,
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: const TextStyle(color: AppColors.labelBlack),
             decoration: InputDecoration(
               hintText: hint,
               counterText: '', // Hide character counter
@@ -86,7 +88,7 @@ class AppTextField extends StatelessWidget {
               suffixIcon: suffixIcon,
               alignLabelWithHint: true,
               filled: true,
-              fillColor: AppColors.fieldFill,
+              fillColor: fillColor ?? AppColors.fieldFill,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide.none,
@@ -124,7 +126,7 @@ class AppTextField extends StatelessWidget {
       onTap: onTap,
       textInputAction: TextInputAction.done,
       textAlignVertical: TextAlignVertical.center,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: const TextStyle(color: AppColors.labelBlack),
       readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
@@ -133,7 +135,7 @@ class AppTextField extends StatelessWidget {
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: AppColors.fieldFill,
+        fillColor: fillColor ?? AppColors.fieldFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,

@@ -210,7 +210,7 @@ class TimeBuildingListingScreen extends StatelessWidget {
                         TextSpan(text: 'Top '),
                         TextSpan(
                           text: 'safety pilots',
-                          style: TextStyle(color: Color(0xFF007BA7)),
+                          style: const TextStyle(color: AppColors.blueBright),
                         ),
                         TextSpan(text: ' around you'),
                       ],

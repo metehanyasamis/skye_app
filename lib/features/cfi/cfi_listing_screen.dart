@@ -4,7 +4,9 @@ import 'package:skye_app/features/cfi/cfi_detail_screen.dart';
 import 'package:skye_app/features/cfi/create_cfi_profile_screen.dart';
 import 'package:skye_app/features/cfi/cfi_post_screen.dart';
 import 'package:skye_app/features/notifications/notifications_screen.dart';
+import 'package:skye_app/shared/models/pilot_model.dart';
 import 'package:skye_app/shared/models/user_type.dart';
+import 'package:skye_app/shared/services/pilot_api_service.dart';
 import 'package:skye_app/shared/services/user_type_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
@@ -14,10 +16,58 @@ import 'package:skye_app/shared/widgets/cfi_card.dart';
 import 'package:skye_app/shared/widgets/filter_chip.dart';
 import 'package:skye_app/shared/widgets/post_fab.dart';
 
-class CfiListingScreen extends StatelessWidget {
+class CfiListingScreen extends StatefulWidget {
   const CfiListingScreen({super.key});
 
   static const routeName = '/cfi/listing';
+
+  @override
+  State<CfiListingScreen> createState() => _CfiListingScreenState();
+}
+
+class _CfiListingScreenState extends State<CfiListingScreen> {
+  List<PilotModel> _pilots = [];
+  bool _isLoadingPilots = true;
+  String? _pilotError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPilots();
+  }
+
+  Future<void> _loadPilots() async {
+    setState(() {
+      _isLoadingPilots = true;
+      _pilotError = null;
+    });
+
+    try {
+      // Load instructors (pilots with instructor_ratings)
+      final response = await PilotApiService.instance.getPilots(
+        page: 1,
+        perPage: 50, // Load more for listing screen
+      );
+      if (mounted) {
+        // Filter to only show instructors (pilots with instructor_ratings)
+        final instructors = response.data.where((pilot) => pilot.isInstructor).toList();
+        setState(() {
+          _pilots = instructors;
+          _isLoadingPilots = false;
+        });
+        debugPrint('✅ [CfiListingScreen] Loaded ${_pilots.length} instructors');
+      }
+    } catch (e) {
+      debugPrint('❌ [CfiListingScreen] Failed to load pilots: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingPilots = false;
+          _pilotError = 'Failed to load instructors';
+          _pilots = [];
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +240,7 @@ class CfiListingScreen extends StatelessWidget {
                     TextSpan(text: 'Top '),
                     TextSpan(
                       text: 'CFI\'s',
-                      style: TextStyle(color: Color(0xFF007BA7)),
+                      style: const TextStyle(color: AppColors.blueBright),
                     ),
                     TextSpan(text: ' around you'),
                   ],
@@ -203,38 +253,60 @@ class CfiListingScreen extends StatelessWidget {
 
           // CFI list – alt padding: son kart CustomBottomNavBar altında kalmasın
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                bottom: 60 +
-                    MediaQuery.of(context).viewPadding.bottom +
-                    16,
-              ),
-              itemCount: 4,
-              itemBuilder: (context, index) {
-                DebugLogger.log(
-                  'CfiListingScreen',
-                  'build card',
-                  {'index': index},
-                );
+            child: _isLoadingPilots
+                ? const Center(child: CircularProgressIndicator())
+                : _pilotError != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _pilotError!,
+                              style: const TextStyle(color: AppColors.textGray),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadPilots,
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _pilots.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No instructors available',
+                              style: TextStyle(color: AppColors.textGray),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              bottom: 60 +
+                                  MediaQuery.of(context).viewPadding.bottom +
+                                  16,
+                            ),
+                            itemCount: _pilots.length,
+                            itemBuilder: (context, index) {
+                              final pilot = _pilots[index];
+                              DebugLogger.log(
+                                'CfiListingScreen',
+                                'build card',
+                                {'index': index, 'pilotId': pilot.id},
+                              );
 
-                return CfiCard(
-                  name: 'Logan Hawke',
-                  experience: '5000+ hours dual given',
-                  instructorRatings: 'CFI, CFII',
-                  licenses: 'CPL, IR',
-                  languages: 'EN,FR',
-                  location: 'NY, USA',
-                  airport: 'FFL Airport',
-                  hourlyRate: '50',
-                  rating: '4.9',
-                  onTap: () {
-                    Navigator.of(context).pushNamed(CfiDetailScreen.routeName);
-                  },
-                );
-              },
-            ),
+                              return CfiCard(
+                                pilot: pilot,
+                                onTap: () {
+                                  Navigator.of(context).pushNamed(
+                                    CfiDetailScreen.routeName,
+                                    arguments: {'pilotId': pilot.id},
+                                  );
+                                },
+                              );
+                            },
+                          ),
           ),
             ],
           ),

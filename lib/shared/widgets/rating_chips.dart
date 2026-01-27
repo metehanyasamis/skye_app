@@ -64,9 +64,8 @@ class RatingChips extends StatelessWidget {
                       option,
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : (option == 'CPL' ? FontWeight.w300 : FontWeight.w600),
+                        fontWeight: FontWeight.w600,
+                        height: 1.0,
                         color: isSelected ? AppColors.white : AppColors.labelBlack,
                       ),
                     ),

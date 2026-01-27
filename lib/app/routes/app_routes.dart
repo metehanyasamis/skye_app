@@ -27,6 +27,8 @@ import 'package:skye_app/features/safety_pilot/safety_pilot_informations_screen.
 import 'package:skye_app/features/time_building/time_building_listing_screen.dart';
 import 'package:skye_app/features/auth/auth/welcome_screen.dart';
 import 'package:skye_app/features/time_building/time_building_post_screen.dart';
+import 'package:skye_app/features/home/video_player_screen.dart';
+import 'package:skye_app/features/blog/blog_webview_screen.dart';
 
 /// Merkezi route yönetimi.
 /// Tüm route isimleri ve builder'lar tek yerden yönetilir.
@@ -73,6 +75,8 @@ abstract final class AppRoutes {
 
   // ─── Other ────────────────────────────────────────────────────────────────
   static const String notifications = '/notifications';
+  static const String videoPlayer = '/video-player';
+  static const String blogWebView = '/blog/webview';
 
   /// Tab bar ile kullanılan route'lar (sıra önemli).
   static const List<String> tabRoutes = [
@@ -85,32 +89,34 @@ abstract final class AppRoutes {
 
   /// MaterialApp routes. Auth gate `home` olunca başlangıç AuthGate'dir.
   static Map<String, WidgetBuilder> get routes => {
-        welcome: (_) => const WelcomeScreen(),
-        createAccountPhone: (_) => const CreateAccountPhoneScreen(),
-        createAccountVerification: (_) => const CreateAccountVerificationScreen(),
-        personalInformation: (_) => const PersonalInformationScreen(),
-        usageDetails: (_) => const UsageDetailsScreen(),
-        notificationPermission: (_) => const NotificationPermissionScreen(),
-        loginPhone: (_) => const LoginPhoneScreen(),
-        loginVerification: (_) => const LoginVerificationScreen(),
-        home: (_) => const HomeScreen(),
-        cfiListing: (_) => const CfiListingScreen(),
-        aircraftListing: (_) => const AircraftListingScreen(),
-        timeBuildingListing: (_) => const TimeBuildingListingScreen(),
-        profile: (_) => const ProfileScreen(),
-        createCfiProfile: (_) => const CreateCfiProfileScreen(),
-        cfiPost: (_) => const CfiPostScreen(),
-        cfiInformations: (_) => const CfiInformationsScreen(),
-        cfiExperiences: (_) => const CfiExperiencesScreen(),
-        cfiInReview: (_) => const CfiInReviewScreen(),
-        cfiDetail: (_) => const CfiDetailScreen(),
-        aircraftDetail: (_) => const AircraftDetailScreen(),
-        aircraftPost: (_) => const AircraftPostScreen(),
-        createSafetyPilotProfile: (_) => const CreateSafetyPilotProfileScreen(),
-        safetyPilotInformations: (_) => const SafetyPilotInformationsScreen(),
-        safetyPilotExperiences: (_) => const SafetyPilotExperiencesScreen(),
-        safetyPilotInReview: (_) => const SafetyPilotInReviewScreen(),
-        timeBuildingPost: (_) => const TimeBuildingPostScreen(),
-        notifications: (_) => const NotificationsScreen(),
+        AppRoutes.welcome: (_) => const WelcomeScreen(),
+        AppRoutes.createAccountPhone: (_) => const CreateAccountPhoneScreen(),
+        AppRoutes.createAccountVerification: (_) => const CreateAccountVerificationScreen(),
+        AppRoutes.personalInformation: (_) => const PersonalInformationScreen(),
+        AppRoutes.usageDetails: (_) => const UsageDetailsScreen(),
+        AppRoutes.notificationPermission: (_) => const NotificationPermissionScreen(),
+        AppRoutes.loginPhone: (_) => const LoginPhoneScreen(),
+        AppRoutes.loginVerification: (_) => const LoginVerificationScreen(),
+        AppRoutes.home: (_) => const HomeScreen(),
+        AppRoutes.cfiListing: (_) => const CfiListingScreen(),
+        AppRoutes.aircraftListing: (_) => const AircraftListingScreen(),
+        AppRoutes.timeBuildingListing: (_) => const TimeBuildingListingScreen(),
+        AppRoutes.profile: (_) => const ProfileScreen(),
+        AppRoutes.createCfiProfile: (_) => const CreateCfiProfileScreen(),
+        AppRoutes.cfiPost: (_) => const CfiPostScreen(),
+        AppRoutes.cfiInformations: (_) => const CfiInformationsScreen(),
+        AppRoutes.cfiExperiences: (_) => const CfiExperiencesScreen(),
+        AppRoutes.cfiInReview: (_) => const CfiInReviewScreen(),
+        AppRoutes.cfiDetail: (_) => const CfiDetailScreen(),
+        AppRoutes.aircraftDetail: (_) => const AircraftDetailScreen(),
+        AppRoutes.aircraftPost: (_) => const AircraftPostScreen(),
+        AppRoutes.createSafetyPilotProfile: (_) => const CreateSafetyPilotProfileScreen(),
+        AppRoutes.safetyPilotInformations: (_) => const SafetyPilotInformationsScreen(),
+        AppRoutes.safetyPilotExperiences: (_) => const SafetyPilotExperiencesScreen(),
+        AppRoutes.safetyPilotInReview: (_) => const SafetyPilotInReviewScreen(),
+        AppRoutes.timeBuildingPost: (_) => const TimeBuildingPostScreen(),
+        AppRoutes.notifications: (_) => const NotificationsScreen(),
+        AppRoutes.videoPlayer: (_) => const VideoPlayerScreen(),
+        AppRoutes.blogWebView: (_) => const BlogWebViewScreen(),
       };
 }

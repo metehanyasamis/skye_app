@@ -192,8 +192,14 @@ class AircraftCard extends StatelessWidget {
 
   Map<String, String> _getImageHeaders() {
     final headers = <String, String>{'Accept': 'image/*'};
-    final authToken = ApiService.instance.dio.options.headers['Authorization'];
-    if (authToken != null) headers['Authorization'] = authToken as String;
+    try {
+      final authToken = ApiService.instance.getAuthToken();
+      if (authToken != null) {
+        headers['Authorization'] = authToken;
+      }
+    } catch (e) {
+      debugPrint('❌ [AircraftCard] Error getting auth token: $e');
+    }
     return headers;
   }
 }

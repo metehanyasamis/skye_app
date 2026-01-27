@@ -1,0 +1,136 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:skye_app/shared/models/pilot_model.dart';
+import 'package:skye_app/shared/services/api_service.dart';
+
+/// Pilot API service
+/// Handles fetching pilots/instructors from backend
+class PilotApiService {
+  PilotApiService._();
+
+  static final PilotApiService instance = PilotApiService._();
+
+  /// Get all active and approved pilots with full profile details
+  /// 
+  /// Endpoint: GET /api/pilots
+  /// Query params: page (default: 1), per_page (default: 15, max: 100)
+  /// Response: { "data": [...], "meta": {...}, "links": {...} }
+  Future<PilotListResponse> getPilots({
+    int? page,
+    int? perPage,
+  }) async {
+    try {
+      debugPrint('👨‍✈️ [PilotApiService] getPilots: page=$page, perPage=$perPage');
+
+      final queryParams = <String, dynamic>{};
+      if (page != null) {
+        queryParams['page'] = page;
+      }
+      if (perPage != null) {
+        queryParams['per_page'] = perPage;
+      }
+
+      final response = await ApiService.instance.dio.get(
+        '/pilots',
+        queryParameters: queryParams.isEmpty ? null : queryParams,
+      );
+
+      debugPrint('✅ [PilotApiService] getPilots success');
+      debugPrint('📦 [PilotApiService] Response type: ${response.data.runtimeType}');
+
+      // Backend may return either:
+      // 1. Direct array: [{...}, {...}]
+      // 2. Wrapped format: {"data": [...], "meta": {...}, "links": {...}}
+      if (response.data is List) {
+        // Direct array format - wrap it
+        final pilotsList = response.data as List<dynamic>;
+        final pilots = pilotsList
+            .map((e) => PilotModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+        return PilotListResponse(
+          data: pilots,
+          meta: null,
+          links: null,
+        );
+      } else {
+        // Wrapped format
+        return PilotListResponse.fromJson(response.data as Map<String, dynamic>);
+      }
+    } on DioException catch (e) {
+      debugPrint('❌ [PilotApiService] getPilots error: ${e.message}');
+      rethrow;
+    } catch (e, st) {
+      debugPrint('❌ [PilotApiService] getPilots unexpected error: $e\n$st');
+      rethrow;
+    }
+  }
+
+  /// Get single pilot by ID
+  /// 
+  /// Endpoint: GET /api/pilots/{id}
+  /// Response: { "data": {...} }
+  Future<PilotModel> getPilot(int id) async {
+    try {
+      debugPrint('👨‍✈️ [PilotApiService] getPilot: id=$id');
+
+      final response = await ApiService.instance.dio.get('/pilots/$id');
+
+      debugPrint('✅ [PilotApiService] getPilot success');
+
+      final data = response.data as Map<String, dynamic>;
+      return PilotModel.fromJson(data['data'] as Map<String, dynamic>);
+    } on DioException catch (e) {
+      debugPrint('❌ [PilotApiService] getPilot error: ${e.message}');
+      rethrow;
+    } catch (e, st) {
+      debugPrint('❌ [PilotApiService] getPilot unexpected error: $e\n$st');
+      rethrow;
+    }
+  }
+
+  /// Submit new pilot application
+  /// 
+  /// Endpoint: POST /api/pilot/applications
+  /// Request body: {
+  ///   "package_id": int,
+  ///   "pilot_type": string,
+  ///   "desired_level": string,
+  ///   "license_number": string,
+  ///   "base_airport": string,
+  ///   "country": string,
+  ///   "city": string,
+  ///   "address": string,
+  ///   "experience_years": int,
+  ///   "total_flight_hours": int,
+  ///   "hourly_rate": int,
+  ///   "notes": string,
+  ///   "spoken_languages": [string],
+  ///   "instructor_ratings": [string],
+  ///   "other_licenses": [string],
+  ///   "aircraft_experiences": [{aircraft_type, hours, owns_aircraft}]
+  /// }
+  Future<Map<String, dynamic>> submitApplication(Map<String, dynamic> data) async {
+    try {
+      debugPrint('👨‍✈️ [PilotApiService] submitApplication');
+      debugPrint('📦 [PilotApiService] Data: $data');
+
+      final response = await ApiService.instance.dio.post(
+        '/pilot/applications',
+        data: data,
+      );
+
+      debugPrint('✅ [PilotApiService] submitApplication success');
+
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      debugPrint('❌ [PilotApiService] submitApplication error: ${e.message}');
+      if (e.response != null) {
+        debugPrint('❌ [PilotApiService] Response: ${e.response?.data}');
+      }
+      rethrow;
+    } catch (e, st) {
+      debugPrint('❌ [PilotApiService] submitApplication unexpected error: $e\n$st');
+      rethrow;
+    }
+  }
+}

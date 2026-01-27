@@ -16,7 +16,24 @@ class LoginResponse {
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     // API response format: { "message": "...", "data": { "user": {...}, "token": "..." } }
+    debugPrint('🔍 [LoginResponse] Parsing JSON...');
+    debugPrint('🔍 [LoginResponse] JSON keys: ${json.keys.toList()}');
+    
     final data = json['data'] as Map<String, dynamic>?;
+    debugPrint('🔍 [LoginResponse] Data: $data');
+    
+    if (data != null) {
+      debugPrint('🔍 [LoginResponse] Data keys: ${data.keys.toList()}');
+      final token = data['token'] as String?;
+      debugPrint('🔍 [LoginResponse] Token from data: ${token != null ? "YES (${token.length} chars)" : "NO"}');
+    } else {
+      debugPrint('⚠️ [LoginResponse] No "data" key found in JSON!');
+      // Try alternative structure: maybe token is directly in json?
+      if (json.containsKey('token')) {
+        debugPrint('🔍 [LoginResponse] Found token directly in JSON root!');
+      }
+    }
+    
     return LoginResponse(
       token: data?['token'] as String?,
       user: data?['user'] as Map<String, dynamic>?,
@@ -165,7 +182,7 @@ class AuthApiService {
         if (responseData.containsKey('data')) {
           final data = responseData['data'] as Map<String, dynamic>?;
           if (data != null) {
-            debugPrint('📦 [AuthApiService] Response data: $data');
+            //debugPrint('📦 [AuthApiService] Response data: $data');
             if (data.containsKey('code') || data.containsKey('otp') || data.containsKey('verification_code')) {
               final otpCode = data['code'] ?? data['otp'] ?? data['verification_code'];
               debugPrint('🔑 [AuthApiService] ════════════════════════════════════');
@@ -268,13 +285,46 @@ class AuthApiService {
         },
       );
 
-      debugPrint('✅ [AuthApiService] login success: ${response.data}');
+      debugPrint('✅ [AuthApiService] login success');
+      debugPrint('📦 [AuthApiService] Full response data: ${response.data}');
+      debugPrint('📦 [AuthApiService] Response type: ${response.data.runtimeType}');
+      
+      // Check response structure
+      if (response.data is Map<String, dynamic>) {
+        final responseMap = response.data as Map<String, dynamic>;
+        debugPrint('📋 [AuthApiService] Response keys: ${responseMap.keys.toList()}');
+        
+        if (responseMap.containsKey('data')) {
+          final data = responseMap['data'];
+          debugPrint('📋 [AuthApiService] Data type: ${data.runtimeType}');
+          if (data is Map<String, dynamic>) {
+            debugPrint('📋 [AuthApiService] Data keys: ${(data as Map<String, dynamic>).keys.toList()}');
+            if ((data as Map<String, dynamic>).containsKey('token')) {
+              final tokenValue = (data as Map<String, dynamic>)['token'];
+              debugPrint('🔑 [AuthApiService] Token found in data: ${tokenValue != null ? "YES (length: ${tokenValue.toString().length})" : "NO"}');
+            } else {
+              debugPrint('⚠️ [AuthApiService] No "token" key in data!');
+            }
+          }
+        } else {
+          debugPrint('⚠️ [AuthApiService] No "data" key in response!');
+        }
+      }
       
       final result = LoginResponse.fromJson(response.data as Map<String, dynamic>);
       
+      debugPrint('🔑 [AuthApiService] Parsed token: ${result.token != null ? "YES (length: ${result.token!.length})" : "NO"}');
+      debugPrint('👤 [AuthApiService] Parsed user: ${result.user != null ? "YES" : "NO"}');
+      debugPrint('💬 [AuthApiService] Parsed message: ${result.message ?? "NO"}');
+      
       // Set auth token if provided
       if (result.token != null) {
-        ApiService.instance.setAuthToken(result.token);
+        debugPrint('🔑 [AuthApiService] Saving token to ApiService...');
+        await ApiService.instance.setAuthToken(result.token);
+        debugPrint('🔑 [AuthApiService] Token saved successfully');
+      } else {
+        debugPrint('⚠️ [AuthApiService] No token in login response!');
+        debugPrint('⚠️ [AuthApiService] This means images will fail with 403!');
       }
       
       return result;
@@ -382,13 +432,46 @@ class AuthApiService {
         data: data,
       );
 
-      debugPrint('✅ [AuthApiService] completeRegistration success: ${response.data}');
+      debugPrint('✅ [AuthApiService] completeRegistration success');
+      debugPrint('📦 [AuthApiService] Full response data: ${response.data}');
+      debugPrint('📦 [AuthApiService] Response type: ${response.data.runtimeType}');
+      
+      // Check response structure
+      if (response.data is Map<String, dynamic>) {
+        final responseMap = response.data as Map<String, dynamic>;
+        debugPrint('📋 [AuthApiService] Response keys: ${responseMap.keys.toList()}');
+        
+        if (responseMap.containsKey('data')) {
+          final data = responseMap['data'];
+          debugPrint('📋 [AuthApiService] Data type: ${data.runtimeType}');
+          if (data is Map<String, dynamic>) {
+            debugPrint('📋 [AuthApiService] Data keys: ${(data as Map<String, dynamic>).keys.toList()}');
+            if ((data as Map<String, dynamic>).containsKey('token')) {
+              final tokenValue = (data as Map<String, dynamic>)['token'];
+              debugPrint('🔑 [AuthApiService] Token found in data: ${tokenValue != null ? "YES (length: ${tokenValue.toString().length})" : "NO"}');
+            } else {
+              debugPrint('⚠️ [AuthApiService] No "token" key in data!');
+            }
+          }
+        } else {
+          debugPrint('⚠️ [AuthApiService] No "data" key in response!');
+        }
+      }
       
       final result = LoginResponse.fromJson(response.data as Map<String, dynamic>);
       
+      debugPrint('🔑 [AuthApiService] Parsed token: ${result.token != null ? "YES (length: ${result.token!.length})" : "NO"}');
+      debugPrint('👤 [AuthApiService] Parsed user: ${result.user != null ? "YES" : "NO"}');
+      debugPrint('💬 [AuthApiService] Parsed message: ${result.message ?? "NO"}');
+      
       // Set auth token if provided
       if (result.token != null) {
-        ApiService.instance.setAuthToken(result.token);
+        debugPrint('🔑 [AuthApiService] Saving token to ApiService...');
+        await ApiService.instance.setAuthToken(result.token);
+        debugPrint('🔑 [AuthApiService] Token saved successfully');
+      } else {
+        debugPrint('⚠️ [AuthApiService] No token in registration response!');
+        debugPrint('⚠️ [AuthApiService] This means images will fail with 403!');
       }
       
       return result;
@@ -414,7 +497,7 @@ class AuthApiService {
       await ApiService.instance.dio.post('/auth/logout');
       
       // Clear auth token
-      ApiService.instance.clearAuthToken();
+      await ApiService.instance.clearAuthToken();
       
       debugPrint('✅ [AuthApiService] logout success');
     } on DioException catch (e) {
