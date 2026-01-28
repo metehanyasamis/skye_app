@@ -21,6 +21,10 @@ class AppTextField extends StatelessWidget {
     this.inputFormatters,
     this.readOnly = false,
     this.fillColor,
+    this.style,
+    this.labelStyle,
+    this.hintStyle,
+    this.errorText,
   });
 
   final String label;
@@ -38,7 +42,11 @@ class AppTextField extends StatelessWidget {
   final VoidCallback? onTap;
   final List<TextInputFormatter>? inputFormatters;
   final bool readOnly;
-  final Color? fillColor; // Optional fill color override
+  final Color? fillColor;
+  final TextStyle? style;
+  final TextStyle? labelStyle;
+  final TextStyle? hintStyle;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +65,7 @@ class AppTextField extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
               label,
-              style: const TextStyle(
+              style: labelStyle ?? const TextStyle(
                 color: AppColors.labelBlack,
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
@@ -80,10 +88,12 @@ class AppTextField extends StatelessWidget {
             readOnly: readOnly,
             textInputAction: TextInputAction.newline,
             textAlignVertical: TextAlignVertical.top,
-            style: const TextStyle(color: AppColors.labelBlack),
+            style: style ?? const TextStyle(color: AppColors.labelBlack),
             decoration: InputDecoration(
               hintText: hint,
-              counterText: '', // Hide character counter
+              counterText: '',
+              errorText: errorText,
+              errorStyle: TextStyle(color: Colors.red.shade200, fontSize: 12),
               prefixIcon: prefixIcon,
               suffixIcon: suffixIcon,
               alignLabelWithHint: true,
@@ -101,7 +111,15 @@ class AppTextField extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(color: AppColors.selectedBlue, width: 2),
               ),
-              hintStyle: TextStyle(
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.red.shade300, width: 1),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.red.shade300, width: 2),
+              ),
+              hintStyle: hintStyle ?? TextStyle(
                 color: AppColors.textSecondary.withValues(alpha: 0.5),
                 fontSize: 16,
               ),
@@ -126,12 +144,14 @@ class AppTextField extends StatelessWidget {
       onTap: onTap,
       textInputAction: TextInputAction.done,
       textAlignVertical: TextAlignVertical.center,
-      style: const TextStyle(color: AppColors.labelBlack),
+      style: style ?? const TextStyle(color: AppColors.labelBlack),
       readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        counterText: '', // Hide character counter
+        counterText: '',
+        errorText: errorText,
+        errorStyle: TextStyle(color: Colors.red.shade200, fontSize: 12),
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
@@ -148,11 +168,19 @@ class AppTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.selectedBlue, width: 2),
         ),
-        labelStyle: const TextStyle(
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.red.shade300, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.red.shade300, width: 2),
+        ),
+        labelStyle: labelStyle ?? const TextStyle(
           color: AppColors.textSecondary,
           fontSize: 16,
         ),
-        hintStyle: TextStyle(
+        hintStyle: hintStyle ?? TextStyle(
           color: AppColors.textSecondary.withValues(alpha: 0.5),
           fontSize: 16,
         ),

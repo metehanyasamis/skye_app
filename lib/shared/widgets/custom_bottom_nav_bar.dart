@@ -75,31 +75,28 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
 
     return SizedBox(
-      height: 60 + bottomInset,
+      height: 72 + bottomInset,
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
           CustomPaint(
-            size: Size(MediaQuery.of(context).size.width, 60),
+            size: Size(MediaQuery.of(context).size.width, 72),
             painter: _NavBarPainter(
               index: _currentIndex,
               itemCount: _items.length,
             ),
           ),
           Padding(
-            padding: EdgeInsets.only(bottom: bottomInset),
-            child: SizedBox(
-              height: 64,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(
-                  _items.length,
-                  (i) => _NavButton(
-                    item: _items[i],
-                    selected: i == _currentIndex,
-                    controller: _controller,
-                    onTap: () => _onTap(i),
-                  ),
+            padding: EdgeInsets.only(bottom: bottomInset + 6, top: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(
+                _items.length,
+                (i) => _NavButton(
+                  item: _items[i],
+                  selected: i == _currentIndex,
+                  controller: _controller,
+                  onTap: () => _onTap(i),
                 ),
               ),
             ),
@@ -141,22 +138,22 @@ class _NavButton extends StatelessWidget {
                 children: [
                   Image.asset(
                     item.icon,
-                    width: 30,
-                    height: 30,
+                    width: 28,
+                    height: 28,
                     color: selected
                         ? AppColors.navy900
                         : AppColors.textSecondary,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   AnimatedOpacity(
                     opacity: selected ? 1 : 0,
                     duration: const Duration(milliseconds: 120),
                     child: Text(
                       item.label,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        height: 1.1,
+                        height: 1.0,
                         color: AppColors.navy900,
                       ),
                     ),

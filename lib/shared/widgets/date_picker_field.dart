@@ -30,6 +30,8 @@ class DatePickerField extends StatefulWidget {
     this.iconColor,
     this.hintColor,
     this.prefillFromInitialDate = false,
+    this.darkStyle = false,
+    this.errorText,
   });
 
   final DateTime initialDate;
@@ -46,6 +48,9 @@ class DatePickerField extends StatefulWidget {
   final Color? hintColor;
   /// Alanı [initialDate] ile doldur (örn. Post DoD/DoA bugün). false ise boş bırak (örn. DOB).
   final bool prefillFromInitialDate;
+  /// Beyaz metin ve koyu arka plan (örn. Create Account ekranları).
+  final bool darkStyle;
+  final String? errorText;
 
   @override
   State<DatePickerField> createState() => _DatePickerFieldState();
@@ -79,8 +84,7 @@ class _DatePickerFieldState extends State<DatePickerField> {
   @override
   void didUpdateWidget(DatePickerField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialDate != widget.initialDate ||
-        oldWidget.format != widget.format ||
+    if (oldWidget.format != widget.format ||
         oldWidget.prefillFromInitialDate != widget.prefillFromInitialDate) {
       _formatter = DateFormat(widget.format);
       _value = widget.prefillFromInitialDate ? widget.initialDate : null;
@@ -90,6 +94,7 @@ class _DatePickerFieldState extends State<DatePickerField> {
         _effectiveController.clear();
       }
     }
+    // initialDate omitted: avoid clearing when parent passes DateTime.now() etc.
   }
 
   @override
@@ -135,6 +140,19 @@ class _DatePickerFieldState extends State<DatePickerField> {
       label: widget.label!,
       hint: widget.hint,
       onChanged: (_) {},
+      errorText: widget.errorText,
+      style: widget.darkStyle
+          ? const TextStyle(color: AppColors.white, fontSize: 16)
+          : null,
+      labelStyle: widget.darkStyle
+          ? const TextStyle(color: AppColors.white, fontSize: 16)
+          : null,
+      hintStyle: widget.darkStyle
+          ? TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16)
+          : null,
+      fillColor: widget.darkStyle
+          ? AppColors.white.withValues(alpha: 0.12)
+          : null,
     );
   }
 

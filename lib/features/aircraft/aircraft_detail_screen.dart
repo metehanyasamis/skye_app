@@ -1,117 +1,215 @@
 import 'package:flutter/material.dart';
-
+import 'package:skye_app/shared/models/aircraft_model.dart';
+import 'package:skye_app/shared/services/aircraft_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
 
-class AircraftDetailScreen extends StatelessWidget {
+class AircraftDetailScreen extends StatefulWidget {
   const AircraftDetailScreen({super.key});
 
   static const routeName = '/aircraft/detail';
 
   @override
-  Widget build(BuildContext context) {
-    debugPrint('🛩️ [AircraftDetailScreen] build() started');
+  State<AircraftDetailScreen> createState() => _AircraftDetailScreenState();
+}
 
+class _AircraftDetailScreenState extends State<AircraftDetailScreen> {
+  AircraftModel? _aircraft;
+  bool _loading = true;
+  String? _error;
+  bool _hasFetched = false;
+
+  int? get _id {
+    final a = ModalRoute.of(context)?.settings.arguments;
+    if (a == null) return null;
+    if (a is int) return a;
+    if (a is num) return a.toInt();
+    return null;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hasFetched) return;
+    final id = _id;
+    _hasFetched = true;
+    if (id == null) {
+      setState(() {
+        _loading = false;
+        _error = 'Invalid aircraft id';
+      });
+      return;
+    }
+    _load();
+  }
+
+  Future<void> _load() async {
+    final id = _id;
+    if (id == null) return;
+
+    setState(() {
+      _loading = true;
+      _error = null;
+      _aircraft = null;
+    });
+
+    try {
+      final a = await AircraftApiService.instance.getAircraftListing(id);
+      if (mounted) {
+        setState(() {
+          _aircraft = a;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'Failed to load aircraft';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     SystemUIHelper.setLightStatusBar();
-    debugPrint('✅ [AircraftDetailScreen] SystemChrome.setSystemUIOverlayStyle applied');
+
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: AppColors.cfiBackground,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.labelBlack, size: 22),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
+              const Expanded(child: Center(child: CircularProgressIndicator())),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: AppColors.cfiBackground,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.labelBlack, size: 22),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!, style: const TextStyle(color: Colors.red)),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _load,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final a = _aircraft!;
+    final location = a.location ?? '';
+    final airport = location.split(',').isNotEmpty ? location.split(',').first.trim() : '—';
+    final seats = a.seatCount != null ? '${a.seatCount} Seats' : '—';
+    final wet = a.wetPrice != null ? '\$${a.wetPrice!.toStringAsFixed(0)}' : '—';
+    final dry = a.dryPrice != null ? '\$${a.dryPrice!.toStringAsFixed(0)}' : '—';
+
+    final topPadding = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: AppColors.cfiBackground,
       body: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top header with back and favorite
-            Builder(
-              builder: (context) {
-                debugPrint('🧩 [AircraftDetailScreen] Header built');
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, topPadding + 12, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.labelBlack, size: 22),
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(8),
+                      minimumSize: const Size(44, 44),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.favorite_border, color: AppColors.labelBlack, size: 24),
+                    onPressed: () {},
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(8),
+                      minimumSize: const Size(44, 44),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                _AircraftImage(coverUrl: a.coverImageUrl),
+                Positioned(
+                  left: 20,
+                  right: 20,
+                  bottom: 12,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.start,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: AppColors.labelBlack),
-                        onPressed: () {
-                          debugPrint('⬅️ [AircraftDetailScreen] Back pressed -> pop()');
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.favorite_border, color: AppColors.labelBlack),
-                        onPressed: () {
-                          debugPrint('❤️ [AircraftDetailScreen] Favorite pressed');
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-
-            // Aircraft image
-            Builder(
-              builder: (context) {
-                debugPrint('🖼️ [AircraftDetailScreen] Aircraft image container built');
-                return Container(
-                  height: 243,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF6F6F6),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(8),
-                      bottomRight: Radius.circular(8),
-                    ),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.flight,
-                      size: 120,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            // Badges
-            Builder(
-              builder: (context) {
-                debugPrint('🏷️ [AircraftDetailScreen] Badges row built');
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: const [
                       _Badge(icon: Icons.star, text: '4.9'),
-                      SizedBox(width: 8),
-                      _Badge(text: 'Airport: NY'),
-                      SizedBox(width: 8),
-                      _Badge(text: 'Seats: 4'),
+                      _Badge(text: 'Airport: $airport'),
+                      _Badge(text: 'Seats: $seats'),
                     ],
                   ),
-                );
-              },
+                ),
+              ],
             ),
-
             const SizedBox(height: 24),
-
-            Builder(
-              builder: (context) {
-                debugPrint('ℹ️ [AircraftDetailScreen] Information section built');
-                return _InformationSection();
-              },
+            _InformationSection(
+              aircraft: a,
+              ownerName: a.user?.name ?? '—',
+              location: location,
+              seats: seats,
+              model: a.model,
+              title: a.title,
+              wetPrice: wet,
+              dryPrice: dry,
+              description: a.description ?? '',
             ),
-
             const SizedBox(height: 16),
-
-            Builder(
-              builder: (context) {
-                debugPrint('⭐ [AircraftDetailScreen] Reviews section built');
-                return _ReviewsSection();
-              },
-            ),
-
+            const _ReviewsSection(),
             const SizedBox(height: 40),
           ],
         ),
@@ -120,36 +218,80 @@ class AircraftDetailScreen extends StatelessWidget {
   }
 }
 
+class _AircraftImage extends StatelessWidget {
+  const _AircraftImage({this.coverUrl});
+
+  final String? coverUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 243,
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Color(0xFFF6F6F6),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(8),
+          bottomRight: Radius.circular(8),
+        ),
+      ),
+      child: coverUrl != null && coverUrl!.isNotEmpty
+          ? ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              child: Image.network(
+                coverUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const _PlaceholderIcon(),
+              ),
+            )
+          : const _PlaceholderIcon(),
+    );
+  }
+}
+
+class _PlaceholderIcon extends StatelessWidget {
+  const _PlaceholderIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Icon(Icons.flight, size: 120, color: AppColors.textSecondary),
+    );
+  }
+}
+
 class _Badge extends StatelessWidget {
-  const _Badge({
-    this.icon,
-    required this.text,
-  });
+  const _Badge({this.icon, required this.text});
 
   final IconData? icon;
   final String text;
 
+  static const _textColor = Color(0xFF1F2937);
+
   @override
   Widget build(BuildContext context) {
-    debugPrint('🏷️ [_Badge] build text="$text" icon=${icon != null}');
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 12, color: AppColors.labelBlack),
+            Icon(icon, size: 14, color: _textColor),
             const SizedBox(width: 4),
           ],
           Text(
             text,
             style: const TextStyle(
-              fontSize: 10,
-              color: AppColors.labelBlack,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: _textColor,
             ),
           ),
         ],
@@ -159,10 +301,30 @@ class _Badge extends StatelessWidget {
 }
 
 class _InformationSection extends StatelessWidget {
+  const _InformationSection({
+    required this.aircraft,
+    required this.ownerName,
+    required this.location,
+    required this.seats,
+    required this.model,
+    required this.title,
+    required this.wetPrice,
+    required this.dryPrice,
+    required this.description,
+  });
+
+  final AircraftModel aircraft;
+  final String ownerName;
+  final String location;
+  final String seats;
+  final String model;
+  final String title;
+  final String wetPrice;
+  final String dryPrice;
+  final String description;
+
   @override
   Widget build(BuildContext context) {
-    debugPrint('ℹ️ [_InformationSection] build started');
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
@@ -190,106 +352,75 @@ class _InformationSection extends StatelessWidget {
             ),
             child: Column(
               children: [
-                // Owner profile row
-                Builder(
-                  builder: (context) {
-                    debugPrint('👤 [_InformationSection] Owner row built');
-                    return Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 25,
-                          backgroundColor: AppColors.cardLight,
-                          child: Icon(Icons.person, color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Pelin Doğrul L.R Riberio',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.labelBlack,
-                                ),
+                Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 25,
+                      backgroundColor: AppColors.cardLight,
+                      child: Icon(Icons.person, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ownerName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.labelBlack,
+                            ),
+                          ),
+                          if (location.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              location,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.labelBlack60,
                               ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  ...List.generate(5, (index) {
-                                    debugPrint('⭐ [_InformationSection] Owner star built index=$index');
-                                    return const Icon(
-                                      Icons.star,
-                                      size: 12,
-                                      color: Color(0xFFFEC84B),
-                                    );
-                                  }),
-                                  const SizedBox(width: 4),
-                                  const Text(
-                                    '5',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.labelBlack,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.phone, color: AppColors.blue500),
-                          onPressed: () {
-                            debugPrint('📞 [_InformationSection] Phone icon pressed');
-                          },
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
-                    );
-                  },
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.phone, color: AppColors.blue500),
+                      onPressed: () {},
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
                 ),
-
                 const SizedBox(height: 16),
-
-                // Airplane and Range
-                Builder(
-                  builder: (context) {
-                    debugPrint('🧾 [_InformationSection] Airplane + Range row built');
-                    return Row(
-                      children: const [
-                        Expanded(
-                          child: _InfoCard(
-                            label: 'Airplane',
-                            value: 'Cessna 172',
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: _InfoCard(
-                            label: 'Range',
-                            value: '750 NM',
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                Row(
+                  children: [
+                    Expanded(
+                      child: _InfoCard(label: 'Aircraft', value: title.isNotEmpty ? title : model),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _InfoCard(label: 'Seats', value: seats),
+                    ),
+                  ],
                 ),
-
                 const SizedBox(height: 16),
-
-                // Explanation
-                Builder(
-                  builder: (context) {
-                    debugPrint('📝 [_InformationSection] Explanation card built');
-                    return const _InfoCard(
-                      label: 'Explanation',
-                      value: 'Nezih Levent ve Ömer Bey dünyanın en iyi kaptan pilotlarıdır.',
-                      isFullWidth: true,
-                    );
-                  },
+                Row(
+                  children: [
+                    Expanded(
+                      child: _InfoCard(label: 'Wet price', value: wetPrice),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _InfoCard(label: 'Dry price', value: dryPrice),
+                    ),
+                  ],
                 ),
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _InfoCard(label: 'Description', value: description, isFullWidth: true),
+                ],
               ],
             ),
           ),
@@ -312,8 +443,6 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🧾 [_InfoCard] build label="$label" fullWidth=$isFullWidth');
-
     return Container(
       width: isFullWidth ? double.infinity : null,
       padding: const EdgeInsets.all(8),
@@ -326,11 +455,7 @@ class _InfoCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF667085),
-            ),
-            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF667085)),
           ),
           const SizedBox(height: 4),
           Text(
@@ -348,10 +473,10 @@ class _InfoCard extends StatelessWidget {
 }
 
 class _ReviewsSection extends StatelessWidget {
+  const _ReviewsSection();
+
   @override
   Widget build(BuildContext context) {
-    debugPrint('⭐ [_ReviewsSection] build started');
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
@@ -371,37 +496,24 @@ class _ReviewsSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Builder(
-            builder: (context) {
-              debugPrint('🧩 [_ReviewsSection] ReviewCard(ivan) built');
-              return const _ReviewCard(
-                name: 'Ivan',
-                date: 'May 21, 2022',
-                rating: 5,
-                review:
-                'I flew 30 hours in this aircraft with my instructor. The owner is very attentive!',
-              );
-            },
+          const _ReviewCard(
+            name: 'Ivan',
+            date: 'May 21, 2022',
+            rating: 5,
+            review: 'I flew 30 hours in this aircraft with my instructor. The owner is very attentive!',
           ),
           const SizedBox(height: 16),
-          Builder(
-            builder: (context) {
-              debugPrint('🧩 [_ReviewsSection] ReviewCard(alexander) built');
-              return const _ReviewCard(
-                name: 'Alexander',
-                date: 'May 21, 2022',
-                rating: 5,
-                review: '',
-              );
-            },
+          const _ReviewCard(
+            name: 'Alexander',
+            date: 'May 21, 2022',
+            rating: 5,
+            review: '',
           ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () {
-                debugPrint('📋 [_ReviewsSection] All reviews pressed');
-              },
+              onPressed: () {},
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 side: const BorderSide(color: AppColors.labelBlack),
@@ -440,8 +552,6 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🗣️ [_ReviewCard] build name="$name" rating=$rating reviewEmpty=${review.isEmpty}');
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -480,10 +590,7 @@ class _ReviewCard extends StatelessWidget {
                     ),
                     Text(
                       date,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF82898F),
-                      ),
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF82898F)),
                     ),
                   ],
                 ),
@@ -493,32 +600,16 @@ class _ReviewCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              ...List.generate(rating, (index) {
-                debugPrint('⭐ [_ReviewCard] Star built name="$name" index=$index');
-                return const Icon(
-                  Icons.star,
-                  size: 12,
-                  color: Color(0xFFFEC84B),
-                );
-              }),
+              ...List.generate(rating, (_) => const Icon(Icons.star, size: 12, color: Color(0xFFFEC84B))),
               const SizedBox(width: 4),
-              Text(
-                rating.toString(),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.labelBlack,
-                ),
-              ),
+              Text(rating.toString(), style: const TextStyle(fontSize: 12, color: AppColors.labelBlack)),
             ],
           ),
           if (review.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
               review,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF475467),
-              ),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF475467)),
             ),
           ],
         ],

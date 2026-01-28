@@ -149,15 +149,30 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
                       icon: Icons.attach_money,
                       isSelected: _selectedType == null,
                       onTap: () {
-                        DebugLogger.log('AircraftListingScreen', 'filter tapped', {
-                          'filter': 'Rent/Buy',
-                        });
                         _loadAircrafts();
                       },
                     ),
-                const SizedBox(width: 7),
-                FilterChip(
-                  label: 'Aircraft Brand',
+                    const SizedBox(width: 7),
+                    FilterChip(
+                      label: 'Rental',
+                      icon: Icons.flight,
+                      isSelected: _selectedType == 'rental',
+                      onTap: () {
+                        _loadAircrafts(type: 'rental');
+                      },
+                    ),
+                    const SizedBox(width: 7),
+                    FilterChip(
+                      label: 'Sale',
+                      icon: Icons.sell,
+                      isSelected: _selectedType == 'sale',
+                      onTap: () {
+                        _loadAircrafts(type: 'sale');
+                      },
+                    ),
+                    const SizedBox(width: 7),
+                    FilterChip(
+                      label: 'Aircraft Brand',
                   icon: Icons.flight,
                   isSelected: false,
                   onTap: () {
@@ -290,19 +305,14 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
                             itemCount: _aircrafts.length,
                             itemBuilder: (context, index) {
                               final aircraft = _aircrafts[index];
-                              return GestureDetector(
+                              return AircraftCard.fromModel(
+                                aircraft,
                                 onTap: () {
-                                  DebugLogger.log(
-                                    'AircraftListingScreen',
-                                    'aircraft card tapped',
-                                    {'id': aircraft.id, 'title': aircraft.title},
-                                  );
                                   Navigator.of(context).pushNamed(
                                     AircraftDetailScreen.routeName,
                                     arguments: aircraft.id,
                                   );
                                 },
-                                child: AircraftCard.fromModel(aircraft),
                               );
                             },
                           ),

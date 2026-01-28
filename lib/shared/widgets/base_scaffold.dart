@@ -46,8 +46,10 @@ class BaseScaffold extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
     final keyboard = MediaQuery.of(context).viewInsets.bottom;
 
+    // When resizeToAvoidBottomInset, body already shrinks above keyboard → don't add keyboard padding
+    final useKeyboardPadding = keyboardAwareBottom && !resizeToAvoidBottomInset;
     final effectiveBottomPadding =
-        (keyboardAwareBottom ? (keyboard + bottomInset) : bottomInset) +
+        (useKeyboardPadding ? (keyboard + bottomInset) : bottomInset) +
             bottomOffset;
 
     return Scaffold(

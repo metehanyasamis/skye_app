@@ -140,20 +140,19 @@ class SafetyPilotInReviewScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 60),
-
-            // Go To Homepage button
-            PrimaryButton(
-              label: 'Go To Homepage',
-              onPressed: () {
-                debugPrint('🏁 [SafetyPilotInReviewScreen] Go To Homepage pressed');
-                Navigator.of(context).pushReplacementNamed(
-                  HomeScreen.routeName,
-                );
-              },
-            ),
-
-            const SizedBox(height: 40),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+          child: PrimaryButton(
+            label: 'Go To Homepage',
+            onPressed: () {
+              debugPrint('🏁 [SafetyPilotInReviewScreen] Go To Homepage pressed');
+              Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+            },
+          ),
         ),
       ),
     );

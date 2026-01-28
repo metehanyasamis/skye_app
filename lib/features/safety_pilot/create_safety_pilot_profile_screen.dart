@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skye_app/features/safety_pilot/safety_pilot_informations_screen.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
 import 'package:skye_app/shared/widgets/base_form_screen.dart';
@@ -42,6 +43,22 @@ class _CreateSafetyPilotProfileScreenState
     super.dispose();
   }
 
+  void _handleNextPage() {
+    DebugLogger.log('CreateSafetyPilotProfileScreen', 'Next Page pressed');
+    final formData = <String, dynamic>{
+      'spoken_languages': _spokenLanguagesController.text.trim(),
+      'base_airport': _baseAirportsController.text.trim(),
+      'license_number': _licenseNoController.text.trim(),
+      'country': _countryController.text.trim(),
+      'city': _cityController.text.trim(),
+      'address': _addressController.text.trim(),
+    };
+    Navigator.of(context).pushNamed(
+      SafetyPilotInformationsScreen.routeName,
+      arguments: formData,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     DebugLogger.log('CreateSafetyPilotProfileScreen', 'build');
@@ -54,110 +71,93 @@ class _CreateSafetyPilotProfileScreenState
       children: [
 
         // Section header
-        const Padding(
-          padding: EdgeInsets.only(left: 4),
-          child: Text(
-            'More about you',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: AppColors.labelBlack,
-              height: 24 / 14,
-            ),
+        const Text(
+          'More about you',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: AppColors.labelBlack,
+            height: 24 / 14,
           ),
         ),
 
         const SizedBox(height: 16),
 
         // Spoken languages
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: FormFieldWithIcon(
-            label: 'Spoken languages',
-            icon: Icons.language,
-            controller: _spokenLanguagesController,
-            onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'spokenLanguages changed', {'value': v}),
-          ),
+        FormFieldWithIcon(
+          label: 'Spoken languages',
+          icon: Icons.language,
+          controller: _spokenLanguagesController,
+          fillColor: AppColors.white,
+          onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'spokenLanguages changed', {'value': v}),
         ),
 
         const SizedBox(height: 24),
 
         // Base airport(s)
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: FormFieldWithIcon(
-            label: 'Base airport(s)',
-            icon: Icons.flight_takeoff,
-            controller: _baseAirportsController,
-            onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'baseAirports changed', {'value': v}),
-          ),
+        FormFieldWithIcon(
+          label: 'Base airport(s)',
+          icon: Icons.flight_takeoff,
+          controller: _baseAirportsController,
+          fillColor: AppColors.white,
+          onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'baseAirports changed', {'value': v}),
         ),
 
         const SizedBox(height: 24),
 
         // License no
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: FormFieldWithIcon(
-            label: 'License no',
-            icon: Icons.badge,
-            controller: _licenseNoController,
-            onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'licenseNo changed', {'value': v}),
-          ),
+        FormFieldWithIcon(
+          label: 'License no',
+          icon: Icons.badge,
+          controller: _licenseNoController,
+          fillColor: AppColors.white,
+          onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'licenseNo changed', {'value': v}),
         ),
 
         const SizedBox(height: 24),
 
         // Country and City side by side
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: Row(
-            children: [
-              Expanded(
-                child: FormFieldWithIcon(
-                  label: 'Country',
-                  icon: Icons.public,
-                  controller: _countryController,
-                  onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'country changed', {'value': v}),
-                ),
+        Row(
+          children: [
+            Expanded(
+              child: FormFieldWithIcon(
+                label: 'Country',
+                icon: Icons.public,
+                controller: _countryController,
+                fillColor: AppColors.white,
+                onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'country changed', {'value': v}),
               ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: FormFieldWithIcon(
-                  label: 'City',
-                  icon: Icons.location_city,
-                  controller: _cityController,
-                  onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'city changed', {'value': v}),
-                ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: FormFieldWithIcon(
+                label: 'City',
+                icon: Icons.location_city,
+                controller: _cityController,
+                fillColor: AppColors.white,
+                onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'city changed', {'value': v}),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
 
         const SizedBox(height: 24),
 
         // Address
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: FormFieldWithIcon(
-            label: 'Address',
-            icon: Icons.location_on,
-            controller: _addressController,
-            onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'address changed', {'value': v}),
-          ),
+        FormFieldWithIcon(
+          label: 'Address',
+          icon: Icons.location_on,
+          controller: _addressController,
+          fillColor: AppColors.white,
+          onChanged: (v) => DebugLogger.log('CreateSafetyPilotProfileScreen', 'address changed', {'value': v}),
         ),
-
-            const SizedBox(height: 40),
 
         const SizedBox(height: 40),
 
         // Next Page button
         PrimaryButton(
           label: 'Next Page',
-          onPressed: () {
-            DebugLogger.log('CreateSafetyPilotProfileScreen', 'Next Page pressed');
-            // TODO: Navigate to next step
-          },
+          onPressed: _handleNextPage,
         ),
 
         const SizedBox(height: 24),

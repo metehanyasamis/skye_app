@@ -2,7 +2,7 @@
 // eğitmen için airport bilgisi yok şuan n&a dönüyoruz
 //Favoriler böümü yok tasarımı dahi yok!
 //filtreler yok CFI, Aircraft ve Safetly Pilot Filtreleri eklenecek
-//arama endpointi yok
+//Search - arama endpointi yok
 //blog web sitesine mi yönlendiricez?
 //görsel ve videolar gelmiyor,  izin durumu ile ilgili olabilir mi?
 //settings alanı yok, bu settingsde logo, kvkk vs dönecek
@@ -13,3 +13,4 @@
 //POST
 ///api/pilot/applications
 //Submit new pilot application Parameters
+//safetypilot create profile post endpinit yok!

@@ -27,7 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     DebugLogger.log('ProfileScreen', 'build()');
     SystemUIHelper.setLightStatusBar();
 
-    final bottomNavHeight = 60 + MediaQuery.of(context).viewPadding.bottom;
+    final bottomNavHeight = 72 + MediaQuery.of(context).viewPadding.bottom;
 
     return TabShell(
       child: SingleChildScrollView(

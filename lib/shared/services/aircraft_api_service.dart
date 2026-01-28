@@ -69,4 +69,33 @@ class AircraftApiService {
       rethrow;
     }
   }
+
+  /// Create aircraft listing
+  ///
+  /// Endpoint: POST /api/aircraft-listings
+  /// Body: { title, model, base_airport?, location?, seat_count?, listing_type?, wet_price?, dry_price?, ... }
+  Future<AircraftModel> createAircraftListing(Map<String, dynamic> body) async {
+    try {
+      debugPrint('✈️ [AircraftApiService] createAircraftListing');
+
+      final response = await ApiService.instance.dio.post(
+        '/aircraft-listings',
+        data: body,
+      );
+
+      debugPrint('✅ [AircraftApiService] createAircraftListing success');
+
+      final data = response.data as Map<String, dynamic>;
+      return AircraftModel.fromJson(data['data'] as Map<String, dynamic>);
+    } on DioException catch (e) {
+      debugPrint('❌ [AircraftApiService] createAircraftListing error: ${e.message}');
+      if (e.response != null) {
+        debugPrint('❌ [AircraftApiService] Response: ${e.response?.data}');
+      }
+      rethrow;
+    } catch (e, st) {
+      debugPrint('❌ [AircraftApiService] createAircraftListing unexpected: $e\n$st');
+      rethrow;
+    }
+  }
 }

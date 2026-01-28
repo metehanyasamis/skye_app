@@ -190,7 +190,7 @@ class _CreateAccountVerificationScreenState
                     const SkyeLogo(
                       type: 'logoText',
                       color: 'white',
-                      height: 50,
+                      height: 36,
                     ),
                     const Spacer(),
                     const SizedBox(width: 48),
@@ -207,7 +207,7 @@ class _CreateAccountVerificationScreenState
                 const SizedBox(height: 32),
                 const Text(
                   'Verification Code',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 18),
+                  style: TextStyle(color: AppColors.white, fontSize: 18),
                 ),
                 const SizedBox(height: 16),
 

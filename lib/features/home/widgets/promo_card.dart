@@ -33,11 +33,19 @@ class PromoCard extends StatelessWidget {
     final displayTitle = isFromBanner ? banner!.title : title;
     final displaySubtitle = isFromBanner ? banner!.subtitle : null;
     final displayGradient = isFromBanner ? null : gradient;
-    final imageUrl = isFromBanner ? banner!.mediaUrl : null;
+    final isVideo = isFromBanner && banner!.type == 'video';
+    final imageUrl = (isFromBanner && !isVideo) ? banner!.mediaUrl : null;
+    final effectiveGradient = displayGradient ?? (isVideo
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.navy900, AppColors.blueGradientLight],
+          )
+        : null);
 
     debugPrint('🧩 [PromoCard] build title="$displayTitle"');
     if (isFromBanner) {
-      debugPrint('   📸 [PromoCard] imageUrl: $imageUrl');
+      debugPrint('   📸 [PromoCard] imageUrl: $imageUrl (isVideo=$isVideo, skip image load)');
       debugPrint('   🎬 [PromoCard] type: ${banner!.type}');
     }
 
@@ -49,7 +57,7 @@ class PromoCard extends StatelessWidget {
         height: 151,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          gradient: displayGradient,
+          gradient: effectiveGradient,
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
@@ -70,7 +78,7 @@ class PromoCard extends StatelessWidget {
                     // Show gradient background (no progress indicator) while loading or on error
                     return Container(
                       decoration: BoxDecoration(
-                        gradient: displayGradient ??
+                        gradient: effectiveGradient ??
                             const LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -79,12 +87,6 @@ class PromoCard extends StatelessWidget {
                       ),
                     );
                   },
-                ),
-              )
-            else if (displayGradient != null)
-              Container(
-                decoration: BoxDecoration(
-                  gradient: displayGradient,
                 ),
               ),
             // Dark overlay for better text readability when using image
@@ -143,8 +145,7 @@ class PromoCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Video play icon - only show if banner type is 'video'
-            if (isFromBanner && banner!.type == 'video')
+            if (isVideo)
               Positioned(
                 bottom: 7,
                 right: 7,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skye_app/features/safety_pilot/safety_pilot_summary_screen.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
 import 'package:skye_app/shared/widgets/base_form_screen.dart';
@@ -25,6 +26,9 @@ class _SafetyPilotExperiencesScreenState
     AircraftExperience(type: 'DA-40', hours: ''),
   ];
 
+  Map<String, dynamic> _formData = {};
+  bool _hasLoadedFormData = false;
+
   @override
   void initState() {
     super.initState();
@@ -32,9 +36,56 @@ class _SafetyPilotExperiencesScreenState
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasLoadedFormData) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        _formData = Map<String, dynamic>.from(args);
+        _hasLoadedFormData = true;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     debugPrint('🧑‍✈️ [SafetyPilotExperiencesScreen] dispose');
     super.dispose();
+  }
+
+  Future<void> _showAircraftTypeDialog() async {
+    final allAircraftTypes = ['C172', 'PA-28', 'DA-40', 'C152', 'SR20', 'SR22'];
+    final selectedTypes = _aircraftExperiences.map((e) => e.type).toSet();
+    final availableTypes = allAircraftTypes.where((t) => !selectedTypes.contains(t)).toList();
+    if (availableTypes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All available aircraft types have been added'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+    final selectedType = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Select Aircraft Type', style: TextStyle(color: AppColors.labelBlack)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableTypes.length,
+            itemBuilder: (ctx, i) {
+              final t = availableTypes[i];
+              return ListTile(
+                title: Text(t, style: const TextStyle(color: AppColors.labelBlack)),
+                onTap: () => Navigator.of(ctx).pop(t),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    if (selectedType != null) {
+      setState(() => _aircraftExperiences.add(AircraftExperience(type: selectedType, hours: '')));
+    }
   }
 
   @override
@@ -48,7 +99,7 @@ class _SafetyPilotExperiencesScreenState
       totalSteps: 4,
       children: [
 
-        // Total flight hours section
+        // Total flight hours section (CFI ile aynı)
         const Padding(
           padding: EdgeInsets.only(left: 2),
           child: Text(
@@ -61,25 +112,20 @@ class _SafetyPilotExperiencesScreenState
             ),
           ),
         ),
-
         const SizedBox(height: 16),
-
-        Padding(
-          padding: const EdgeInsets.only(left: 2),
+        Center(
           child: HourlyRateSelector(
             selectedRate: _totalFlightHours,
             onRateSelected: (rate) {
               DebugLogger.log('SafetyPilotExperiencesScreen', 'totalFlightHours selected', {'rate': rate});
-              setState(() {
-                _totalFlightHours = rate;
-              });
+              setState(() => _totalFlightHours = rate);
             },
           ),
         ),
 
         const SizedBox(height: 40),
 
-        // Aircraft type experience section
+        // Aircraft type experience section (CFI ile aynı)
         const Padding(
           padding: EdgeInsets.only(left: 2),
           child: Text(
@@ -92,42 +138,27 @@ class _SafetyPilotExperiencesScreenState
             ),
           ),
         ),
-
         const SizedBox(height: 16),
-
         Padding(
           padding: const EdgeInsets.only(left: 2),
           child: Column(
-            children: _aircraftExperiences.map((experience) {
+            children: _aircraftExperiences.map((e) {
               return _AircraftExperienceRow(
-                aircraftType: experience.type,
-                hours: experience.hours,
-                onHoursChanged: (hours) {
-                  DebugLogger.log('SafetyPilotExperiencesScreen', 'hours changed', {
-                    'type': experience.type,
-                    'hours': hours,
-                  });
-                  setState(() {
-                    experience.hours = hours;
-                  });
+                aircraftType: e.type,
+                hours: e.hours,
+                onHoursChanged: (h) {
+                  DebugLogger.log('SafetyPilotExperiencesScreen', 'hours changed', {'type': e.type, 'hours': h});
+                  setState(() => e.hours = h);
                 },
               );
             }).toList(),
           ),
         ),
-
         const SizedBox(height: 12),
-
-        // Add More button
         Padding(
           padding: const EdgeInsets.only(left: 2),
           child: TextButton(
-            onPressed: () {
-              DebugLogger.log('SafetyPilotExperiencesScreen', 'Add More pressed');
-              setState(() {
-                _aircraftExperiences.add(AircraftExperience(type: '', hours: ''));
-              });
-            },
+            onPressed: _showAircraftTypeDialog,
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,
               minimumSize: Size.zero,
@@ -136,11 +167,7 @@ class _SafetyPilotExperiencesScreenState
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: const [
-                Icon(
-                  Icons.add,
-                  size: 24,
-                  color: AppColors.selectedBlue,
-                ),
+                Icon(Icons.add, size: 24, color: AppColors.selectedBlue),
                 SizedBox(width: 4),
                 Text(
                   'Add More',
@@ -158,15 +185,24 @@ class _SafetyPilotExperiencesScreenState
 
         const SizedBox(height: 40),
 
-        // Submit button
+        // Next Page button
         PrimaryButton(
-          label: 'Submit',
+          label: 'Next Page',
           onPressed: () {
-            DebugLogger.log('SafetyPilotExperiencesScreen', 'Submit pressed', {
-              'totalFlightHours': _totalFlightHours,
-              'aircraftExperiences': _aircraftExperiences.map((e) => {'type': e.type, 'hours': e.hours}).toList(),
-            });
-            // TODO: Submit form
+            DebugLogger.log('SafetyPilotExperiencesScreen', 'Next Page pressed');
+            final formData = <String, dynamic>{
+              ..._formData,
+              'total_flight_hours': _totalFlightHours.toString(),
+              'aircraft_experiences': _aircraftExperiences
+                  .where((e) => e.type.isNotEmpty && e.hours.isNotEmpty)
+                  .map((e) => {'type': e.type, 'hours': e.hours})
+                  .toList(),
+            };
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => SafetyPilotSummaryScreen(formData: formData),
+              ),
+            );
           },
         ),
 
@@ -234,7 +270,6 @@ class _AircraftExperienceRowState extends State<_AircraftExperienceRow> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Aircraft type label
           SizedBox(
             width: 70,
             child: Text(
@@ -248,50 +283,54 @@ class _AircraftExperienceRowState extends State<_AircraftExperienceRow> {
             ),
           ),
           const SizedBox(width: 8),
-
-          // Hours input field
           Expanded(
-            child: Container(
-              height: 27,
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.labelBlack,
-                  width: 1,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: TextField(
+                    controller: _controller,
+                    textAlign: TextAlign.center,
+                    onChanged: (v) => widget.onHoursChanged(v),
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.labelBlack,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: AppColors.white,
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.labelBlack, width: 1),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.labelBlack, width: 1),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.selectedBlue, width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      isDense: true,
+                    ),
+                  ),
                 ),
-              ),
-              child: TextField(
-                controller: _controller,
-                onChanged: (v) {
-                  debugPrint(
-                      '⌨️ [_AircraftExperienceRow] type="${widget.aircraftType}" input="$v"');
-                  widget.onHoursChanged(v);
-                },
-                keyboardType: TextInputType.number,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.labelBlack,
-                ),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding:
-                  EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                ),
-              ),
+              ],
             ),
           ),
-
           const SizedBox(width: 8),
-
-          // "hours" label
-          Text(
-            'hours',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.normal,
-              color: AppColors.labelDarkSecondary.withValues(alpha: 0.5),
-              height: 24 / 14,
+          SizedBox(
+            width: 60,
+            child: Text(
+              'hours',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.normal,
+                color: AppColors.labelDarkSecondary.withValues(alpha: 0.5),
+                height: 24 / 14,
+              ),
             ),
           ),
         ],

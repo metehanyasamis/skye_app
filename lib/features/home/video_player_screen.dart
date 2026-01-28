@@ -20,6 +20,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   bool _hasError = false;
   String? _errorMessage;
   bool _hasInitialized = false;
+  Timer? _positionTimer;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  bool _isPlaying = false;
 
   @override
   void didChangeDependencies() {
@@ -213,11 +217,68 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Auto-play video
       _controller!.play();
       _controller!.removeListener(_videoListener);
+      
+      // Start position timer
+      _startPositionTimer();
+      
+      // Update initial state
+      if (mounted) {
+        setState(() {
+          _duration = _controller!.value.duration;
+          _position = _controller!.value.position;
+          _isPlaying = _controller!.value.isPlaying;
+        });
+      }
     }
+  }
+
+  void _startPositionTimer() {
+    _positionTimer?.cancel();
+    _positionTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (!mounted || _controller == null) {
+        timer.cancel();
+        return;
+      }
+      if (_controller!.value.isInitialized) {
+        setState(() {
+          _position = _controller!.value.position;
+          _duration = _controller!.value.duration;
+          _isPlaying = _controller!.value.isPlaying;
+        });
+      }
+    });
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+    
+    if (hours > 0) {
+      return '${twoDigits(hours)}:${twoDigits(minutes)}:${twoDigits(seconds)}';
+    }
+    return '${twoDigits(minutes)}:${twoDigits(seconds)}';
+  }
+
+  void _togglePlayPause() {
+    if (_controller == null) return;
+    if (_controller!.value.isPlaying) {
+      _controller!.pause();
+    } else {
+      _controller!.play();
+    }
+    setState(() => _isPlaying = !_isPlaying);
+  }
+
+  void _seekTo(Duration position) {
+    if (_controller == null) return;
+    _controller!.seekTo(position);
   }
 
   @override
   void dispose() {
+    _positionTimer?.cancel();
     _controller?.removeListener(_videoListener);
     _controller?.dispose();
     super.dispose();
@@ -242,11 +303,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         ),
         centerTitle: true,
       ),
-      body: Center(
-        child: _isLoading
-            ? const CircularProgressIndicator(color: Colors.white)
-            : _hasError
-                ? Column(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          : _hasError
+              ? Center(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(
@@ -269,14 +330,87 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         child: const Text('Close'),
                       ),
                     ],
-                  )
-                : _controller != null && _controller!.value.isInitialized
-                    ? AspectRatio(
-                        aspectRatio: _controller!.value.aspectRatio,
-                        child: VideoPlayer(_controller!),
+                  ),
+                )
+              : _controller != null && _controller!.value.isInitialized
+                    ? Column(
+                        children: [
+                          Expanded(
+                            child: Center(
+                              child: AspectRatio(
+                                aspectRatio: _controller!.value.aspectRatio,
+                                child: VideoPlayer(_controller!),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            color: Colors.black,
+                            padding: EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              top: 12,
+                              bottom: MediaQuery.of(context).padding.bottom + 12,
+                            ),
+                            child: Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: _togglePlayPause,
+                                  child: Icon(
+                                    _isPlaying ? Icons.pause : Icons.play_arrow,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _formatDuration(_position),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 20,
+                                    child: SliderTheme(
+                                      data: SliderTheme.of(context).copyWith(
+                                        trackHeight: 3,
+                                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+                                        trackShape: const RoundedRectSliderTrackShape(),
+                                      ),
+                                      child: Slider(
+                                        value: _position.inMilliseconds.toDouble(),
+                                        min: 0,
+                                        max: _duration.inMilliseconds > 0
+                                            ? _duration.inMilliseconds.toDouble()
+                                            : 1,
+                                        onChanged: (value) {
+                                          _seekTo(Duration(milliseconds: value.toInt()));
+                                        },
+                                        activeColor: Colors.white,
+                                        inactiveColor: Colors.white.withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _formatDuration(_duration),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       )
                     : const SizedBox(),
-      ),
     );
   }
 }

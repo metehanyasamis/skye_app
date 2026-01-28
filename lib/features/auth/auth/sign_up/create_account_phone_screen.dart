@@ -160,19 +160,19 @@ class _CreateAccountPhoneScreenState extends State<CreateAccountPhoneScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
+                Text(
                   'Already have an account? ',
-                  style: TextStyle(color: AppColors.textPrimary),
+                  style: TextStyle(color: AppColors.white.withValues(alpha: 0.9)),
                 ),
                 GestureDetector(
                   onTap: () {
                     _dismissKeyboard();
                     Navigator.of(context).pop();
                   },
-                  child: const Text(
+                  child: Text(
                     'Log In',
                     style: TextStyle(
-                      color: AppColors.navy800,
+                      color: AppColors.white.withValues(alpha: 0.95),
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -206,7 +206,7 @@ class _CreateAccountPhoneScreenState extends State<CreateAccountPhoneScreen> {
                     const SkyeLogo(
                       type: 'logoText',
                       color: 'white',
-                      height: 50,
+                      height: 36,
                     ),
                     const Spacer(),
                     const SizedBox(width: 48),
@@ -239,15 +239,19 @@ class _CreateAccountPhoneScreenState extends State<CreateAccountPhoneScreen> {
                         keyboardType: TextInputType.number,
                         inputFormatters: [PhoneNumberFormatter()],
                         onChanged: (_) => setState(() {}),
+                        style: const TextStyle(color: AppColors.white, fontSize: 16),
+                        labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                        hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                        fillColor: AppColors.white.withValues(alpha: 0.12),
                       ),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'We will send you verification code.',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: TextStyle(color: AppColors.white.withValues(alpha: 0.85), fontSize: 12),
                 ),
               ],
             ),

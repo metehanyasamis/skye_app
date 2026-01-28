@@ -33,6 +33,13 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   DateTime? _selectedDate;
   String? _phoneNumber;
 
+  String? _firstNameError;
+  String? _lastNameError;
+  String? _dateError;
+  String? _emailError;
+  String? _passwordError;
+  String? _confirmError;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -60,44 +67,78 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     FocusScope.of(context).unfocus();
   }
 
-  bool _isFormValid() {
-    final firstNameValid = _firstNameController.text.trim().isNotEmpty;
-    final lastNameValid = _lastNameController.text.trim().isNotEmpty;
+  bool _validateAndSetErrors() {
+    final first = _firstNameController.text.trim();
+    final last = _lastNameController.text.trim();
+    final email = _emailController.text.trim();
+    final pass = _passwordController.text.trim();
+    final confirm = _confirmPasswordController.text.trim();
 
-    final emailValid = _emailController.text.trim().isNotEmpty &&
-        _emailController.text.contains('@');
+    _firstNameError = first.isEmpty ? 'İsim girin' : null;
+    _lastNameError = last.isEmpty ? 'Soyisim girin' : null;
+    _dateError = _selectedDate == null ? 'Doğum tarihi girin' : null;
 
-    final passwordValid = _passwordController.text.trim().isNotEmpty &&
-        _passwordController.text.length >= 6;
+    if (email.isEmpty) {
+      _emailError = 'Email girin';
+    } else if (!email.contains('@') || !RegExp(r'^[\w.-]+@[\w.-]+\.\w+$').hasMatch(email)) {
+      _emailError = 'Email doğru formatta girin';
+    } else {
+      _emailError = null;
+    }
 
-    final confirmPasswordValid =
-        _confirmPasswordController.text.trim().isNotEmpty &&
-            _passwordController.text == _confirmPasswordController.text;
+    if (pass.isEmpty || pass.length < 6) {
+      _passwordError = 'Şifre en az 6 karakter olmalı';
+    } else {
+      _passwordError = null;
+    }
 
-    final isValid = firstNameValid &&
-        lastNameValid &&
-        emailValid &&
-        passwordValid &&
-        confirmPasswordValid;
+    if (confirm.isEmpty) {
+      _confirmError = 'Şifre tekrarı girin';
+    } else if (pass != confirm) {
+      _confirmError = 'Şifreler eşleşmiyor';
+    } else {
+      _confirmError = null;
+    }
 
-    debugPrint(
-      '🧪 [PersonalInformationScreen] formValid=$isValid '
-          '(first=$firstNameValid last=$lastNameValid email=$emailValid pass=$passwordValid confirm=$confirmPasswordValid)',
-    );
+    return _firstNameError == null &&
+        _lastNameError == null &&
+        _dateError == null &&
+        _emailError == null &&
+        _passwordError == null &&
+        _confirmError == null;
+  }
 
-    return isValid;
+  void _clearFieldError(String which) {
+    switch (which) {
+      case 'first':
+        _firstNameError = null;
+        break;
+      case 'last':
+        _lastNameError = null;
+        break;
+      case 'date':
+        _dateError = null;
+        break;
+      case 'email':
+        _emailError = null;
+        break;
+      case 'password':
+        _passwordError = null;
+        break;
+      case 'confirm':
+        _confirmError = null;
+        break;
+    }
   }
 
   void _onContinue() {
     debugPrint('➡️ [PersonalInformationScreen] Continue tapped');
-
-    if (!_isFormValid()) {
-      debugPrint('⛔ [PersonalInformationScreen] form invalid -> blocked');
+    if (!_validateAndSetErrors()) {
+      setState(() {});
+      debugPrint('⛔ [PersonalInformationScreen] form invalid -> errors shown');
       return;
     }
-
     _dismissKeyboard();
-
     debugPrint('🧾 [PersonalInformationScreen] navigating -> UsageDetails');
     Navigator.of(context).pushNamed(
       UsageDetailsScreen.routeName,
@@ -124,23 +165,21 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     const footerSpace = 180.0;
 
     return BaseScaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       extendBodyBehindAppBar: true,
-      extendBody: true,
+      extendBody: false,
       backgroundColor: Colors.transparent,
       setDarkStatusBar: true,
 
-      // ✅ FOOTER BaseScaffold'a taşındı
       keyboardAwareBottom: true,
       bottom: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 18),
         child: PrimaryButton(
           label: 'Continue',
-          onPressed: _isFormValid() ? _onContinue : null,
+          onPressed: _onContinue,
         ),
       ),
 
-      // ✅ CONTENT sade: scroll
       child: GestureDetector(
         onTap: _dismissKeyboard,
         behavior: HitTestBehavior.opaque,
@@ -167,7 +206,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                     const SkyeLogo(
                       type: 'logoText',
                       color: 'white',
-                      height: 50,
+                      height: 36,
                     ),
                     const Spacer(),
                     const SizedBox(width: 48),
@@ -193,7 +232,15 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   controller: _firstNameController,
                   label: 'Name *',
                   hint: 'Enter your name',
-                  onChanged: (_) => setState(() {}),
+                  errorText: _firstNameError,
+                  onChanged: (_) {
+                    _clearFieldError('first');
+                    setState(() {});
+                  },
+                  style: const TextStyle(color: AppColors.white, fontSize: 16),
+                  labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                  hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                  fillColor: AppColors.white.withValues(alpha: 0.12),
                 ),
 
                 const SizedBox(height: 16),
@@ -202,7 +249,15 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   controller: _lastNameController,
                   label: 'Last Name *',
                   hint: 'Enter your last name',
-                  onChanged: (_) => setState(() {}),
+                  errorText: _lastNameError,
+                  onChanged: (_) {
+                    _clearFieldError('last');
+                    setState(() {});
+                  },
+                  style: const TextStyle(color: AppColors.white, fontSize: 16),
+                  labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                  hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                  fillColor: AppColors.white.withValues(alpha: 0.12),
                 ),
 
                 const SizedBox(height: 16),
@@ -216,7 +271,12 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   firstDate: DateTime(1900),
                   lastDate: DateTime.now(),
                   prefillFromInitialDate: false,
-                  onDateChanged: (d) => setState(() => _selectedDate = d),
+                  onDateChanged: (d) {
+                    _dateError = null;
+                    setState(() => _selectedDate = d);
+                  },
+                  darkStyle: true,
+                  errorText: _dateError,
                 ),
 
                 const SizedBox(height: 16),
@@ -225,8 +285,16 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   controller: _emailController,
                   label: 'Email *',
                   hint: 'Enter your email',
+                  errorText: _emailError,
                   keyboardType: TextInputType.emailAddress,
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) {
+                    _clearFieldError('email');
+                    setState(() {});
+                  },
+                  style: const TextStyle(color: AppColors.white, fontSize: 16),
+                  labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                  hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                  fillColor: AppColors.white.withValues(alpha: 0.12),
                 ),
 
                 const SizedBox(height: 16),
@@ -235,15 +303,23 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   controller: _passwordController,
                   label: 'Password * (minimum 6 characters)',
                   hint: 'Enter your password',
+                  errorText: _passwordError,
                   obscureText: _obscurePassword,
                   keyboardType: TextInputType.visiblePassword,
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) {
+                    _clearFieldError('password');
+                    setState(() {});
+                  },
+                  style: const TextStyle(color: AppColors.white, fontSize: 16),
+                  labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                  hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                  fillColor: AppColors.white.withValues(alpha: 0.12),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
                           ? Icons.visibility_off
                           : Icons.visibility,
-                      color: AppColors.textSecondary,
+                      color: AppColors.white,
                     ),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
@@ -256,15 +332,23 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   controller: _confirmPasswordController,
                   label: 'Confirm Password *',
                   hint: 'Confirm your password',
+                  errorText: _confirmError,
                   obscureText: _obscureConfirmPassword,
                   keyboardType: TextInputType.visiblePassword,
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) {
+                    _clearFieldError('confirm');
+                    setState(() {});
+                  },
+                  style: const TextStyle(color: AppColors.white, fontSize: 16),
+                  labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                  hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                  fillColor: AppColors.white.withValues(alpha: 0.12),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword
                           ? Icons.visibility_off
                           : Icons.visibility,
-                      color: AppColors.textSecondary,
+                      color: AppColors.white,
                     ),
                     onPressed: () => setState(() =>
                     _obscureConfirmPassword = !_obscureConfirmPassword),

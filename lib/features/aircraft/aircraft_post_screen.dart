@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-
+import 'package:skye_app/shared/services/aircraft_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
+import 'package:skye_app/shared/widgets/booking_chips.dart';
 import 'package:skye_app/shared/widgets/primary_button.dart';
 
 
@@ -24,6 +26,9 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
   final _seatsController = TextEditingController();
   final _wetPriceController = TextEditingController();
   final _dryPriceController = TextEditingController();
+
+  String _listingType = 'rental'; // 'rental' | 'sale'
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -57,21 +62,66 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
     FocusScope.of(context).unfocus();
   }
 
-  void _onAdvertisePressed() {
-    debugPrint('🚀 [AircraftPostScreen] Advertise pressed');
+  Future<void> _onAdvertisePressed() async {
+    if (_submitting) return;
 
-    debugPrint('🧾 [AircraftPostScreen] Form values:');
-    debugPrint(' - Aircraft brand: ${_aircraftBrandController.text}');
-    debugPrint(' - Base airport(s): ${_baseAirportsController.text}');
-    debugPrint(' - Aircraft name: ${_aircraftNameController.text}');
-    debugPrint(' - Country: ${_countryController.text}');
-    debugPrint(' - City: ${_cityController.text}');
-    debugPrint(' - Address: ${_addressController.text}');
-    debugPrint(' - Seats: ${_seatsController.text}');
-    debugPrint(' - Wet price: ${_wetPriceController.text}');
-    debugPrint(' - Dry price: ${_dryPriceController.text}');
+    final title = _aircraftNameController.text.trim();
+    final model = _aircraftBrandController.text.trim();
+    if (title.isEmpty || model.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill Aircraft name and Aircraft brand'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
-    // TODO: Submit form
+    setState(() => _submitting = true);
+    FocusScope.of(context).unfocus();
+
+    final city = _cityController.text.trim();
+    final country = _countryController.text.trim();
+    final location = [city, country].where((s) => s.isNotEmpty).join(', ');
+    final seatCount = int.tryParse(_seatsController.text.trim());
+    final wetPrice = double.tryParse(_wetPriceController.text.trim().replaceAll(',', '.'));
+    final dryPrice = double.tryParse(_dryPriceController.text.trim().replaceAll(',', '.'));
+
+    final body = <String, dynamic>{
+      'title': title,
+      'model': model,
+      'base_airport': _baseAirportsController.text.trim(),
+      'location': location.isNotEmpty ? location : _addressController.text.trim(),
+      'address': _addressController.text.trim(),
+      'listing_type': _listingType,
+      'availability_status': 'available',
+      'seat_count': seatCount ?? 0,
+      'wet_price': wetPrice ?? 0,
+      'dry_price': dryPrice ?? 0,
+      'price': (wetPrice ?? dryPrice) ?? 0,
+    };
+
+    try {
+      await AircraftApiService.instance.createAircraftListing(body);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aircraft listing created'), backgroundColor: Colors.green),
+      );
+      Navigator.of(context).pop();
+    } on DioException catch (e) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      final msg = e.response?.data?.toString() ?? e.message ?? 'Request failed';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create listing: $msg'), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create listing: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
@@ -359,6 +409,25 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
                         icon: Icons.place,
                       ),
                       const SizedBox(height: 24),
+                      const Text(
+                        'Listing type',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.normal,
+                          color: AppColors.labelDarkSecondary,
+                          height: 24 / 12,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      BookingChips(
+                        options: const ['Rental', 'Sale'],
+                        selected: _listingType == 'rental' ? 'Rental' : 'Sale',
+                        onSelectionChanged: (s) {
+                          setState(() =>
+                              _listingType = s.toLowerCase());
+                        },
+                      ),
+                      const SizedBox(height: 24),
 
                       _FormFieldWithIcon(
                         label: 'Seats',
@@ -400,8 +469,8 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
           Padding(
             padding: EdgeInsets.fromLTRB(24, 0, 24, 18 + MediaQuery.of(context).viewPadding.bottom),
             child: PrimaryButton(
-              label: 'Advertise',
-              onPressed: _onAdvertisePressed,
+              label: _submitting ? 'Advertising...' : 'Advertise',
+              onPressed: _submitting ? null : _onAdvertisePressed,
             ),
           ),
         ],

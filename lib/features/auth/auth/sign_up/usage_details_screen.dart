@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:skye_app/features/home/home/home_screen.dart';
+import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/services/auth_service.dart';
 import 'package:skye_app/shared/widgets/app_text_field.dart';
 import 'package:skye_app/shared/widgets/base_scaffold.dart';
@@ -118,7 +119,7 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
                   child: SkyeLogo(
                     type: 'logoText',
                     color: 'white',
-                    height: 150,
+                    height: 36,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -130,6 +131,10 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
                   minLines: 2,
                   maxLines: null,
                   onChanged: (_) => setState(() {}),
+                  style: const TextStyle(color: AppColors.white, fontSize: 16),
+                  labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                  hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                  fillColor: AppColors.white.withValues(alpha: 0.12),
                 ),
                 const SizedBox(height: 24),
 
@@ -140,6 +145,10 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
                   minLines: 2,
                   maxLines: null,
                   onChanged: (_) => setState(() {}),
+                  style: const TextStyle(color: AppColors.white, fontSize: 16),
+                  labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                  hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                  fillColor: AppColors.white.withValues(alpha: 0.12),
                 ),
                 const SizedBox(height: 24),
 
@@ -150,6 +159,10 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
                   minLines: 2,
                   maxLines: null,
                   onChanged: (_) => setState(() {}),
+                  style: const TextStyle(color: AppColors.white, fontSize: 16),
+                  labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                  hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                  fillColor: AppColors.white.withValues(alpha: 0.12),
                 ),
               ],
             ),

@@ -240,8 +240,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     isLoading: _isLoadingPilots,
                   ),
 
-                  const SizedBox(height: 2),
-
                   // Helpful Information section
                   HelpfulInformationSection(
                     blogPosts: _blogPosts,

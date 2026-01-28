@@ -115,17 +115,24 @@ class OtpInputFieldState extends State<OtpInputField> {
 
   @override
   Widget build(BuildContext context) {
+    final availableWidth = MediaQuery.sizeOf(context).width - 48;
+    const minCell = 44.0;
+    const gap = 6.0;
+    final totalGap = (widget.length - 1) * gap;
+    final cellSize = ((availableWidth - totalGap) / widget.length).clamp(minCell, 56.0);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: List.generate(widget.length, (index) {
         final hasValue = _controllers[index].text.isNotEmpty;
         final isFocused = _focusNodes[index].hasFocus;
         
         return Container(
-          width: 56,
-          height: 56,
+          width: cellSize,
+          height: cellSize,
           margin: EdgeInsets.only(
-            right: index < widget.length - 1 ? 12 : 0,
+            right: index < widget.length - 1 ? gap : 0,
           ),
           decoration: BoxDecoration(
             color: hasValue ? AppColors.white : AppColors.fieldFill,
@@ -151,8 +158,8 @@ class OtpInputFieldState extends State<OtpInputField> {
                 style: TextStyle(
                   color: hasValue ? AppColors.navy900 : AppColors.white,
                   fontWeight: FontWeight.w700,
-                  fontSize: 24,
-                  height: 1.0, // Better vertical centering
+                  fontSize: (cellSize * 0.42).clamp(18.0, 24.0),
+                  height: 1.0,
                 ),
               decoration: InputDecoration(
                 counterText: '',

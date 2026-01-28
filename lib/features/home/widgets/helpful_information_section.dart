@@ -19,47 +19,50 @@ class HelpfulInformationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'HELPFUL INFORMATIONS',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textGrayLight,
-            letterSpacing: 0.6,
+    return Transform.translate(
+      offset: const Offset(0, -12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'HELPFUL INFORMATIONS',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textGrayLight,
+              letterSpacing: 0.6,
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 135,
-          child: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : blogPosts.isEmpty
-                  ? _buildDefaultInfoCards()
-                  : ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: blogPosts.length,
-                      itemBuilder: (context, index) {
-                        final blog = blogPosts[index];
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            right: index < blogPosts.length - 1 ? 12 : 0,
-                          ),
-                          child: InfoCard(
-                            blog: blog,
-                            onTap: onBlogTap != null
-                                ? () => onBlogTap!(blog)
-                                : () {
-                                    debugPrint('🧭 [HelpfulInformationSection] Blog tapped: ${blog.title}');
-                                  },
-                          ),
-                        );
-                      },
-                    ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 135,
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : blogPosts.isEmpty
+                    ? _buildDefaultInfoCards()
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: blogPosts.length,
+                        itemBuilder: (context, index) {
+                          final blog = blogPosts[index];
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              right: index < blogPosts.length - 1 ? 12 : 0,
+                            ),
+                            child: InfoCard(
+                              blog: blog,
+                              onTap: onBlogTap != null
+                                  ? () => onBlogTap!(blog)
+                                  : () {
+                                      debugPrint('🧭 [HelpfulInformationSection] Blog tapped: ${blog.title}');
+                                    },
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
     );
   }
 
