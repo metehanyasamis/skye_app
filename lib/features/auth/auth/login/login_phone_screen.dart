@@ -259,14 +259,13 @@ class _LoginPhoneScreenState extends State<LoginPhoneScreen> {
 
                       const SizedBox(height: 12),
 
-                      Text(
+                      const Text(
                         'Log In',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                          color: AppColors.white,
+                        style: TextStyle(
+                          fontSize: 28,
                           fontWeight: FontWeight.w800,
+                          color: AppColors.white,
+                          height: 32 / 28,
                         ),
                       ),
 
@@ -278,6 +277,7 @@ class _LoginPhoneScreenState extends State<LoginPhoneScreen> {
                         children: [
                           CountryCodePicker(
                             initialCountryCode: _countryCode,
+                            darkStyle: true,
                             onChanged: (dialCode) {
                               debugPrint(
                                 '🌍 [LoginPhoneScreen] countryCode changed: $dialCode',
@@ -298,6 +298,10 @@ class _LoginPhoneScreenState extends State<LoginPhoneScreen> {
                               inputFormatters: [
                                 PhoneNumberFormatter(),
                               ],
+                              style: const TextStyle(color: AppColors.white, fontSize: 16),
+                              labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                              hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                              fillColor: AppColors.white.withValues(alpha: 0.12),
                               onChanged: (value) {
                                 debugPrint(
                                   '📞 [LoginPhoneScreen] phone changed: $value',
@@ -321,6 +325,10 @@ class _LoginPhoneScreenState extends State<LoginPhoneScreen> {
                         hint: 'Enter your password',
                         obscureText: _obscurePassword,
                         keyboardType: TextInputType.visiblePassword,
+                        style: const TextStyle(color: AppColors.white, fontSize: 16),
+                        labelStyle: const TextStyle(color: AppColors.white, fontSize: 16),
+                        hintStyle: TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16),
+                        fillColor: AppColors.white.withValues(alpha: 0.12),
                         onChanged: (value) {
                           debugPrint(
                             '🔑 [LoginPhoneScreen] password changed: len=${value.length}',
@@ -334,7 +342,7 @@ class _LoginPhoneScreenState extends State<LoginPhoneScreen> {
                             _obscurePassword
                                 ? Icons.visibility_off
                                 : Icons.visibility,
-                            color: AppColors.textSecondary,
+                            color: AppColors.white,
                           ),
                           onPressed: () {
                             debugPrint('👁️ [LoginPhoneScreen] toggle obscure');

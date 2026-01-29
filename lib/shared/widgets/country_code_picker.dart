@@ -20,10 +20,12 @@ class CountryCodePicker extends StatefulWidget {
     super.key,
     required this.onChanged,
     this.initialCountryCode = '+1',
+    this.darkStyle = false,
   });
 
   final Function(String dialCode) onChanged;
   final String initialCountryCode;
+  final bool darkStyle;
 
   @override
   State<CountryCodePicker> createState() => _CountryCodePickerState();
@@ -81,9 +83,15 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
         height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: AppColors.fieldFill,
+          color: widget.darkStyle
+              ? AppColors.white.withValues(alpha: 0.12)
+              : AppColors.fieldFill,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.divider),
+          border: Border.all(
+            color: widget.darkStyle
+                ? AppColors.white.withValues(alpha: 0.2)
+                : AppColors.divider,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -96,15 +104,19 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
             const SizedBox(width: 8),
             Text(
               _selectedCountry.dialCode,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: widget.darkStyle
+                    ? AppColors.white
+                    : AppColors.textPrimary,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(
+            Icon(
               Icons.arrow_drop_down,
-              color: AppColors.textSecondary,
+              color: widget.darkStyle
+                  ? AppColors.white
+                  : AppColors.textSecondary,
               size: 20,
             ),
           ],

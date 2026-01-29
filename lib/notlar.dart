@@ -9,8 +9,8 @@
 //lokasyon için gene mapbox mu kullanıyoruz?
 //dil, base airport, country, city isimleri backendden mi gelecek?
 //CFI Submit formnda Geçerli package_id değerleri nelerdir? (şu an 1 ve 2 reddediliyor)
+//safetypilot create profile post endpinit yok!
 // pilot_type için kabul edilen değerler nelerdir? (şu an "instructor", "CFI", "cfi" reddediliyor)
 //POST
 ///api/pilot/applications
 //Submit new pilot application Parameters
-//safetypilot create profile post endpinit yok!
