@@ -1,15 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide FilterChip;
 import 'package:skye_app/app/shell/tab_shell.dart';
 import 'package:skye_app/features/aircraft/aircraft_detail_screen.dart';
 import 'package:skye_app/features/aircraft/aircraft_post_screen.dart';
+import 'package:skye_app/features/aircraft/widgets/aircraft_filter_sheets.dart';
 import 'package:skye_app/features/notifications/notifications_screen.dart';
 import 'package:skye_app/shared/models/aircraft_model.dart';
 import 'package:skye_app/shared/services/aircraft_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
-import 'package:skye_app/shared/widgets/common_header.dart';
 import 'package:skye_app/shared/widgets/aircraft_card.dart';
+import 'package:skye_app/shared/widgets/common_header.dart';
 import 'package:skye_app/shared/widgets/filter_chip.dart';
 import 'package:skye_app/shared/widgets/post_fab.dart';
 
@@ -26,7 +29,19 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
   List<AircraftModel> _aircrafts = [];
   bool _isLoading = true;
   String? _error;
-  String? _selectedType; // 'sale' or 'rental'
+
+  String? _searchQuery;
+  Timer? _searchDebounce;
+  final _searchController = TextEditingController();
+
+  String? _type;
+  int? _aircraftTypeId;
+  String? _locationState;
+  String? _locationCity;
+  String? _locationAirport;
+  double? _minPrice;
+  double? _maxPrice;
+  String? _sort; // 'price_asc' | 'price_desc'
 
   @override
   void initState() {
@@ -34,21 +49,151 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
     _loadAircrafts();
   }
 
-  Future<void> _loadAircrafts({String? type}) async {
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      setState(() {
+        _searchQuery = value.trim().isEmpty ? null : value.trim();
+        _loadAircrafts();
+      });
+    });
+  }
+
+  void _openRentBuySheet() {
+    showRentBuySheet(
+      context,
+      currentType: _type,
+      onApply: (type) {
+        setState(() {
+          _type = type;
+          _loadAircrafts();
+        });
+      },
+    );
+  }
+
+  void _openAircraftTypeSheet() {
+    showAircraftTypeSheet(
+      context,
+      currentId: _aircraftTypeId,
+      onApply: (id) {
+        setState(() {
+          _aircraftTypeId = id;
+          _loadAircrafts();
+        });
+      },
+    );
+  }
+
+  void _openStateSheet() {
+    showStateSheet(
+      context,
+      currentValue: _locationState,
+      onApply: (v) {
+        setState(() {
+          _locationState = v;
+          _loadAircrafts();
+        });
+      },
+    );
+  }
+
+  void _openCitySheet() {
+    showCitySheet(
+      context,
+      currentValue: _locationCity,
+      onApply: (v) {
+        setState(() {
+          _locationCity = v;
+          _loadAircrafts();
+        });
+      },
+    );
+  }
+
+  void _openAirportSheet() {
+    showAirportSheet(
+      context,
+      currentValue: _locationAirport,
+      onApply: (v) {
+        setState(() {
+          _locationAirport = v;
+          _loadAircrafts();
+        });
+      },
+    );
+  }
+
+  void _openPriceSheet() {
+    showPriceSheet(
+      context,
+      minPrice: _minPrice,
+      maxPrice: _maxPrice,
+      currentSort: _sort,
+      onApply: (min, max, sort) {
+        setState(() {
+          _minPrice = min;
+          _maxPrice = max;
+          _sort = sort;
+          _loadAircrafts();
+        });
+      },
+    );
+  }
+
+  static double _effectivePrice(AircraftModel a) {
+    if (a.price != null) return a.price!;
+    if (a.wetPrice != null && a.dryPrice != null) {
+      return a.wetPrice! < a.dryPrice! ? a.wetPrice! : a.dryPrice!;
+    }
+    if (a.wetPrice != null) return a.wetPrice!;
+    if (a.dryPrice != null) return a.dryPrice!;
+    return double.infinity;
+  }
+
+  Future<void> _loadAircrafts() async {
     setState(() {
       _isLoading = true;
       _error = null;
-      _selectedType = type;
     });
+
+    final locationParts = [
+      _locationState,
+      _locationCity,
+      _locationAirport,
+    ].whereType<String>().where((s) => s.trim().isNotEmpty).map((s) => s.trim()).toList();
+    final location = locationParts.isEmpty ? null : locationParts.join(', ');
 
     try {
       final response = await AircraftApiService.instance.getAircraftListings(
-        type: type,
-        perPage: 50,
+        search: _searchQuery,
+        type: _type,
+        aircraftTypeId: _aircraftTypeId,
+        location: location,
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
+        sort: _sort,
+        perPage: 30,
       );
+      var list = response.data;
+      if (_sort == 'price_asc') {
+        list = List<AircraftModel>.from(list)
+          ..sort((a, b) => _effectivePrice(a).compareTo(_effectivePrice(b)));
+      } else if (_sort == 'price_desc') {
+        list = List<AircraftModel>.from(list)
+          ..sort((a, b) => _effectivePrice(b).compareTo(_effectivePrice(a)));
+      }
       if (mounted) {
         setState(() {
-          _aircrafts = response.data;
+          _aircrafts = list;
           _isLoading = false;
         });
       }
@@ -95,19 +240,15 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TextField(
-                    onChanged: (value) {
-                      DebugLogger.log(
-                        'AircraftListingScreen',
-                        'search changed',
-                        {'query': value},
-                      );
-                    },
-                    onSubmitted: (value) {
-                      DebugLogger.log(
-                        'AircraftListingScreen',
-                        'search submitted',
-                        {'query': value},
-                      );
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    onSubmitted: (_) {
+                      setState(() {
+                        _searchQuery = _searchController.text.trim().isEmpty
+                            ? null
+                            : _searchController.text.trim();
+                      });
+                      _loadAircrafts();
                     },
                     style: const TextStyle(
                       color: AppColors.labelBlack,
@@ -147,95 +288,44 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
                     FilterChip(
                       label: 'Rent/Buy',
                       icon: Icons.attach_money,
-                      isSelected: _selectedType == null,
-                      onTap: () {
-                        _loadAircrafts();
-                      },
+                      isSelected: _type != null,
+                      onTap: _openRentBuySheet,
                     ),
                     const SizedBox(width: 7),
                     FilterChip(
-                      label: 'Rental',
-                      icon: Icons.flight,
-                      isSelected: _selectedType == 'rental',
-                      onTap: () {
-                        _loadAircrafts(type: 'rental');
-                      },
+                      label: 'Aircraft Type',
+                      icon: Icons.airplanemode_active,
+                      isSelected: _aircraftTypeId != null,
+                      onTap: _openAircraftTypeSheet,
                     ),
                     const SizedBox(width: 7),
                     FilterChip(
-                      label: 'Sale',
-                      icon: Icons.sell,
-                      isSelected: _selectedType == 'sale',
-                      onTap: () {
-                        _loadAircrafts(type: 'sale');
-                      },
+                      label: 'State',
+                      icon: Icons.public,
+                      isSelected: _locationState != null && _locationState!.isNotEmpty,
+                      onTap: _openStateSheet,
                     ),
                     const SizedBox(width: 7),
                     FilterChip(
-                      label: 'Aircraft Brand',
-                  icon: Icons.flight,
-                  isSelected: false,
-                  onTap: () {
-                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
-                      'filter': 'Aircraft Brand',
-                    });
-                  },
-                ),
-                const SizedBox(width: 7),
-                FilterChip(
-                  label: 'Aircraft Type',
-                  icon: Icons.airplanemode_active,
-                  isSelected: false,
-                  onTap: () {
-                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
-                      'filter': 'Aircraft Type',
-                    });
-                  },
-                ),
-                const SizedBox(width: 7),
-                FilterChip(
-                  label: 'State',
-                  icon: Icons.public,
-                  isSelected: false,
-                  onTap: () {
-                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
-                      'filter': 'State',
-                    });
-                  },
-                ),
-                const SizedBox(width: 7),
-                FilterChip(
-                  label: 'City',
-                  icon: Icons.location_city,
-                  isSelected: false,
-                  onTap: () {
-                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
-                      'filter': 'City',
-                    });
-                  },
-                ),
-                const SizedBox(width: 7),
-                FilterChip(
-                  label: 'Airport',
-                  icon: Icons.flight_takeoff,
-                  isSelected: false,
-                  onTap: () {
-                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
-                      'filter': 'Airport',
-                    });
-                  },
-                ),
-                const SizedBox(width: 7),
-                FilterChip(
-                  label: 'Price',
-                  icon: Icons.local_offer,
-                  isSelected: false,
-                  onTap: () {
-                    DebugLogger.log('AircraftListingScreen', 'filter tapped', {
-                      'filter': 'Price',
-                    });
-                  },
-                ),
+                      label: 'City',
+                      icon: Icons.location_city,
+                      isSelected: _locationCity != null && _locationCity!.isNotEmpty,
+                      onTap: _openCitySheet,
+                    ),
+                    const SizedBox(width: 7),
+                    FilterChip(
+                      label: 'Airport',
+                      icon: Icons.flight_takeoff,
+                      isSelected: _locationAirport != null && _locationAirport!.isNotEmpty,
+                      onTap: _openAirportSheet,
+                    ),
+                    const SizedBox(width: 7),
+                    FilterChip(
+                      label: 'Price',
+                      icon: Icons.local_offer,
+                      isSelected: _minPrice != null || _maxPrice != null || _sort != null,
+                      onTap: _openPriceSheet,
+                    ),
               ],
             ),
           ),
@@ -284,7 +374,7 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(
-                              onPressed: () => _loadAircrafts(type: _selectedType),
+                              onPressed: _loadAircrafts,
                               child: const Text('Retry'),
                             ),
                           ],
