@@ -1,5 +1,12 @@
-import 'package:flutter/services.dart';
 
+class MapboxConfig {
+  static const accessToken =
+  String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
+}
+
+
+
+/*
 /// Mapbox access token for map display.
 /// Priority: 1) --dart-define=ACCESS_TOKEN=xxx  2) AndroidManifest/Info.plist
 /// Run with: flutter run --dart-define ACCESS_TOKEN=pk.your_token_here
@@ -30,3 +37,5 @@ Future<void> resolveMapboxToken() async {
     // Channel not available or method failed
   } catch (_) {}
 }
+
+ */

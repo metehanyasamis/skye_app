@@ -10,9 +10,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint('[main] ensureInitialized ✅');
 
-  await mapbox_cfg.resolveMapboxToken();
-  final token = mapbox_cfg.effectiveMapboxToken;
-  if (token.isNotEmpty) {
+  // 🔥 Mapbox token from dart-define
+  const token = String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
+
+  if (token.isEmpty) {
+    debugPrint('❌ MAPBOX TOKEN NOT PROVIDED');
+  } else {
     MapboxOptions.setAccessToken(token);
     debugPrint('[main] Mapbox token set ✅');
   }
@@ -20,36 +23,22 @@ void main() async {
   await UserAddressService.instance.load();
   debugPrint('[main] UserAddressService loaded ✅');
 
-  // Initialize API service
   ApiService.instance.init();
-  debugPrint('[main] ApiService initialized ✅');
-  
-  // Restore auth token from SharedPreferences
   await ApiService.instance.restoreAuthToken();
-  debugPrint('[main] Auth token restored ✅');
 
-  // FULL EDGE-TO-EDGE
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  debugPrint('[main] edgeToEdge ✅');
 
-  // IMPORTANT: disable enforced contrast + transparent bars
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       systemNavigationBarColor: Colors.transparent,
-
       statusBarIconBrightness: Brightness.dark,
       systemNavigationBarIconBrightness: Brightness.dark,
-
       statusBarBrightness: Brightness.light,
-
-      // ANDROID 12+ "dark overlay" issue killer:
       systemNavigationBarContrastEnforced: false,
       systemStatusBarContrastEnforced: false,
     ),
   );
-  debugPrint('[main] overlay style ✅');
 
   runApp(const SkyeApp());
-  debugPrint('[main] runApp ✅');
 }
