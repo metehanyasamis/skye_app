@@ -1,9 +1,9 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MapboxConfig {
-  static const accessToken =
-  String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
+  static String get accessToken =>
+      dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
 }
-
 
 
 /*

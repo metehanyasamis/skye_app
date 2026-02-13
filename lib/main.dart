@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:skye_app/app.dart';
-import 'package:skye_app/shared/config/mapbox_config.dart' as mapbox_cfg;
 import 'package:skye_app/shared/services/user_address_service.dart';
 import 'package:skye_app/shared/services/api_service.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint('[main] ensureInitialized ✅');
 
-  // 🔥 Mapbox token from dart-define
-  const token = String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
+  await dotenv.load(fileName: ".env");
 
-  if (token.isEmpty) {
-    debugPrint('❌ MAPBOX TOKEN NOT PROVIDED');
-  } else {
-    MapboxOptions.setAccessToken(token);
-    debugPrint('[main] Mapbox token set ✅');
+  final token = dotenv.env['MAPBOX_ACCESS_TOKEN'];
+
+  if (token == null || token.isEmpty) {
+    throw Exception("MAPBOX_ACCESS_TOKEN missing in .env");
   }
 
-  await UserAddressService.instance.load();
-  debugPrint('[main] UserAddressService loaded ✅');
+  MapboxOptions.setAccessToken(token);
+  debugPrint('[main] Mapbox token set ✅');
 
+  await UserAddressService.instance.load();
   ApiService.instance.init();
   await ApiService.instance.restoreAuthToken();
 

@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:skye_app/shared/config/mapbox_config.dart' as mapbox_cfg;
 import 'package:skye_app/shared/services/location_service.dart';
 import 'package:skye_app/shared/services/user_address_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
 import 'package:skye_app/shared/widgets/location_permission_dialog.dart';
 import 'package:skye_app/shared/widgets/primary_button.dart';
+
+import '../../shared/config/mapbox_config.dart';
 
 /// USA center (approximate geographic center)
 const double _usaCenterLat = 39.8283;
@@ -287,7 +288,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   @override
   Widget build(BuildContext context) {
     DebugLogger.log('MapPickerScreen', 'build()');
-    final token = mapbox_cfg.effectiveMapboxToken;
+    final token = MapboxConfig.accessToken;
     if (token.isEmpty) {
       return Scaffold(
         appBar: AppBar(
