@@ -20,9 +20,9 @@ class PilotModel {
 
   factory PilotModel.fromJson(Map<String, dynamic> json) {
     return PilotModel(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      email: json['email'] as String,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      name: (json['name'] as String?) ?? '',
+      email: (json['email'] as String?) ?? '',
       phone: json['phone'] as String?,
       about: json['about'] as String?,
       profilePhotoPath: json['profile_photo_path'] as String?,
@@ -92,31 +92,31 @@ class PilotProfile {
 
   factory PilotProfile.fromJson(Map<String, dynamic> json) {
     return PilotProfile(
-      id: json['id'] as int,
-      fullName: json['full_name'] as String,
-      age: json['age'] as int?,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      fullName: (json['full_name'] as String?) ?? '',
+      age: (json['age'] as num?)?.toInt(),
       address: json['address'] as String?,
       licenseNumber: json['license_number'] as String?,
       location: json['location'] as String?,
-      experienceYears: json['experience_years'] as int?,
-      totalFlightHours: json['total_flight_hours'] as int?,
+      experienceYears: (json['experience_years'] as num?)?.toInt(),
+      totalFlightHours: (json['total_flight_hours'] as num?)?.toInt(),
       hourlyRate: (json['hourly_rate'] as num?)?.toDouble(),
       rating: (json['rating'] as num?)?.toDouble(),
       level: json['level'] as String?,
       languages: (json['languages'] as List<dynamic>?)
-              ?.map((e) => Language.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => Language.fromJson(e is Map ? e as Map<String, dynamic> : <String, dynamic>{}))
               .toList() ??
           [],
       instructorRatings: (json['instructor_ratings'] as List<dynamic>?)
-              ?.map((e) => InstructorRating.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => InstructorRating.fromJson(e is Map ? e as Map<String, dynamic> : <String, dynamic>{}))
               .toList() ??
           [],
       otherLicenses: (json['other_licenses'] as List<dynamic>?)
-              ?.map((e) => OtherLicense.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => OtherLicense.fromJson(e is Map ? e as Map<String, dynamic> : <String, dynamic>{}))
               .toList() ??
           [],
       aircraftExperiences: (json['aircraft_experiences'] as List<dynamic>?)
-              ?.map((e) => AircraftExperience.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => AircraftExperience.fromJson(e is Map ? e as Map<String, dynamic> : <String, dynamic>{}))
               .toList() ??
           [],
     );
@@ -154,8 +154,8 @@ class Language {
 
   factory Language.fromJson(Map<String, dynamic> json) {
     return Language(
-      id: json['id'] as int,
-      languageCode: json['language_code'] as String,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      languageCode: (json['language_code'] as String?) ?? '',
     );
   }
 
@@ -178,8 +178,8 @@ class InstructorRating {
 
   factory InstructorRating.fromJson(Map<String, dynamic> json) {
     return InstructorRating(
-      id: json['id'] as int,
-      ratingCode: json['rating_code'] as String,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      ratingCode: (json['rating_code'] as String?) ?? '',
     );
   }
 
@@ -202,8 +202,8 @@ class OtherLicense {
 
   factory OtherLicense.fromJson(Map<String, dynamic> json) {
     return OtherLicense(
-      id: json['id'] as int,
-      licenseCode: json['license_code'] as String,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      licenseCode: (json['license_code'] as String?) ?? '',
     );
   }
 
@@ -229,11 +229,13 @@ class AircraftExperience {
   });
 
   factory AircraftExperience.fromJson(Map<String, dynamic> json) {
+    final aircraftType = json['aircraft_type'] as String?;
+    final aircraftTypeCode = json['aircraft_type_code'] as String?;
     return AircraftExperience(
-      id: json['id'] as int,
-      aircraftType: json['aircraft_type'] as String,
-      hours: json['hours'] as int,
-      ownsAircraft: json['owns_aircraft'] as bool,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      aircraftType: (aircraftType ?? aircraftTypeCode ?? '').toString(),
+      hours: (json['hours'] as num?)?.toInt() ?? 0,
+      ownsAircraft: json['owns_aircraft'] == true,
     );
   }
 

@@ -32,6 +32,8 @@ class DatePickerField extends StatefulWidget {
     this.prefillFromInitialDate = false,
     this.darkStyle = false,
     this.errorText,
+    this.fillColor,
+    this.enabledBorderSide,
   });
 
   final DateTime initialDate;
@@ -51,6 +53,8 @@ class DatePickerField extends StatefulWidget {
   /// Beyaz metin ve koyu arka plan (örn. Create Account ekranları).
   final bool darkStyle;
   final String? errorText;
+  final Color? fillColor;
+  final BorderSide? enabledBorderSide;
 
   @override
   State<DatePickerField> createState() => _DatePickerFieldState();
@@ -150,9 +154,9 @@ class _DatePickerFieldState extends State<DatePickerField> {
       hintStyle: widget.darkStyle
           ? TextStyle(color: AppColors.white.withValues(alpha: 0.6), fontSize: 16)
           : null,
-      fillColor: widget.darkStyle
-          ? AppColors.white.withValues(alpha: 0.12)
-          : null,
+      fillColor: widget.fillColor ??
+          (widget.darkStyle ? AppColors.white.withValues(alpha: 0.12) : null),
+      enabledBorderSide: widget.enabledBorderSide,
     );
   }
 

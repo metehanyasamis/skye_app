@@ -48,6 +48,10 @@ class AppTheme {
       // ✅ burada datePickerTheme yok! (Flutter sürümünde desteklenmiyor)
       // ✅ DatePicker styling'i showDatePicker builder içinde Theme() ile verilecek.
 
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        insetPadding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.fieldFill,

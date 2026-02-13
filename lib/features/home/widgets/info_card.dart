@@ -129,25 +129,27 @@ class InfoCard extends StatelessWidget {
   /// Load image using Dio (to ensure auth headers are included)
   Future<Uint8List?> _loadImageWithAuth(String imageUrl) async {
     try {
-      debugPrint('🖼️ [InfoCard] Loading image with Dio: $imageUrl');
+      String fullUrl = imageUrl;
+      if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+        if (imageUrl.startsWith('/')) {
+          fullUrl = 'https://skye.dijicrea.net$imageUrl';
+        } else {
+          fullUrl = 'https://skye.dijicrea.net/storage/$imageUrl';
+        }
+      }
+      debugPrint('🖼️ [InfoCard] Loading image with Dio: $fullUrl');
       
       final dio = ApiService.instance.dio;
-      final authToken = ApiService.instance.getAuthToken();
-      debugPrint('🔑 [InfoCard] Using ApiService Dio, token: ${authToken != null ? "YES" : "NO"}');
-      
-      final uri = Uri.parse(imageUrl);
-      final imagePath = uri.path;
-      debugPrint('🔗 [InfoCard] Image path: $imagePath');
+      debugPrint('🔑 [InfoCard] Using ApiService Dio, token: ${ApiService.instance.getAuthToken() != null ? "YES" : "NO"}');
       
       final imageDio = Dio();
       imageDio.options.headers.addAll(dio.options.headers);
       imageDio.options.headers['Accept'] = 'image/*';
       
-      debugPrint('📤 [InfoCard] Final request URL: $imageUrl');
-      debugPrint('📤 [InfoCard] Final headers: ${imageDio.options.headers}');
+      debugPrint('📤 [InfoCard] Final request URL: $fullUrl');
       
       final response = await imageDio.get<Uint8List>(
-        imageUrl,
+        fullUrl,
         options: Options(
           responseType: ResponseType.bytes,
         ),

@@ -21,6 +21,7 @@ class AppTextField extends StatelessWidget {
     this.inputFormatters,
     this.readOnly = false,
     this.fillColor,
+    this.enabledBorderSide,
     this.style,
     this.labelStyle,
     this.hintStyle,
@@ -43,10 +44,15 @@ class AppTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final bool readOnly;
   final Color? fillColor;
+  /// Ince border - null ise border yok, verilirse enabled/border için kullanılır.
+  final BorderSide? enabledBorderSide;
   final TextStyle? style;
   final TextStyle? labelStyle;
   final TextStyle? hintStyle;
   final String? errorText;
+
+  BorderSide get _effectiveEnabledBorder =>
+      enabledBorderSide ?? BorderSide.none;
 
   @override
   Widget build(BuildContext context) {
@@ -101,11 +107,11 @@ class AppTextField extends StatelessWidget {
               fillColor: fillColor ?? AppColors.fieldFill,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
+                borderSide: _effectiveEnabledBorder,
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
+                borderSide: _effectiveEnabledBorder,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -158,11 +164,11 @@ class AppTextField extends StatelessWidget {
         fillColor: fillColor ?? AppColors.fieldFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+          borderSide: _effectiveEnabledBorder,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+          borderSide: _effectiveEnabledBorder,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),

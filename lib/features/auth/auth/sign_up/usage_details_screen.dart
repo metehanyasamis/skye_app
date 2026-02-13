@@ -2,8 +2,9 @@
 import 'package:flutter/material.dart';
 
 import 'package:skye_app/features/home/home/home_screen.dart';
-import 'package:skye_app/shared/theme/app_colors.dart';
+import 'package:skye_app/shared/services/auth_api_service.dart';
 import 'package:skye_app/shared/services/auth_service.dart';
+import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/widgets/app_text_field.dart';
 import 'package:skye_app/shared/widgets/base_scaffold.dart';
 import 'package:skye_app/shared/widgets/primary_button.dart';
@@ -45,32 +46,76 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
 
   void _dismissKeyboard() => FocusScope.of(context).unfocus();
 
+  bool _isSubmitting = false;
+
   Future<void> _onContinue() async {
     _dismissKeyboard();
 
-    final signupData = {
-      'phone': _userData?['phone'] ?? '',
-      'firstName': _userData?['firstName'] ?? '',
-      'lastName': _userData?['lastName'] ?? '',
-      'dateOfBirth': _userData?['dateOfBirth'] ?? '',
-      'email': _userData?['email'] ?? '',
-      'planToUse': _planToUseController.text.trim(),
-      'position': _positionController.text.trim(),
-      'goals': _goalsController.text.trim(),
-    };
+    final phone = _userData?['phone'] ?? '';
+    final verificationCode = _userData?['verification_code'] ?? '';
+    final firstName = _userData?['firstName'] ?? '';
+    final lastName = _userData?['lastName'] ?? '';
+    final dateOfBirth = _userData?['dateOfBirth'] ?? '';
+    final email = _userData?['email'] ?? '';
+    final password = _userData?['password'] ?? '';
 
-    debugPrint('🧾 signupData: $signupData');
+    if (phone.isEmpty || verificationCode.isEmpty || firstName.isEmpty || lastName.isEmpty || email.isEmpty || password.isEmpty) {
+      debugPrint('❌ [UsageDetailsScreen] missing required fields for completeRegistration');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please complete all required fields in the previous steps')),
+        );
+      }
+      return;
+    }
 
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
+    setState(() => _isSubmitting = true);
+    debugPrint('📝 [UsageDetailsScreen] calling completeRegistration: phone=$phone');
 
-    await AuthService.instance.setLoggedIn(true);
-    if (!mounted) return;
+    try {
+      final result = await AuthApiService.instance.completeRegistration(
+        phone: phone,
+        verificationCode: verificationCode,
+        name: '$firstName $lastName'.trim(),
+        email: email,
+        password: password,
+        passwordConfirmation: password,
+        gender: 'other',
+        dateOfBirth: dateOfBirth.isNotEmpty ? dateOfBirth : null,
+        howPlanToUseSkye: _planToUseController.text.trim().isNotEmpty ? _planToUseController.text.trim() : null,
+        aviationPositionDefinition: _positionController.text.trim().isNotEmpty ? _positionController.text.trim() : null,
+        howSkyeCanHelp: _goalsController.text.trim().isNotEmpty ? _goalsController.text.trim() : null,
+      );
 
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      HomeScreen.routeName,
-      (route) => false,
-    );
+      if (!mounted) return;
+
+      if (result.token != null) {
+        debugPrint('✅ [UsageDetailsScreen] registration success, token saved');
+        await AuthService.instance.setLoggedIn(true);
+        if (!mounted) return;
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          HomeScreen.routeName,
+          (route) => false,
+        );
+      } else {
+        debugPrint('⚠️ [UsageDetailsScreen] registration ok but no token');
+        await AuthService.instance.setLoggedIn(true);
+        if (!mounted) return;
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          HomeScreen.routeName,
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ [UsageDetailsScreen] completeRegistration error: $e');
+      if (mounted) {
+        final msg = e is ApiError ? e.message : e.toString();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration failed: $msg')),
+        );
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   @override
@@ -91,8 +136,8 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             PrimaryButton(
-              label: 'Continue',
-              onPressed: _onContinue,
+              label: _isSubmitting ? 'Creating account...' : 'Continue',
+              onPressed: _isSubmitting ? null : _onContinue,
             ),
             const SizedBox(height: 2),
           ],

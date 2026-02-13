@@ -10,17 +10,21 @@ class BookingChips extends StatelessWidget {
     required this.options,
     required this.selected,
     required this.onSelectionChanged,
+    this.centered = false,
   });
 
   final List<String> options;
   final String? selected;
   final ValueChanged<String> onSelectionChanged;
+  final bool centered;
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
+    final wrap = Wrap(
       spacing: 12,
       runSpacing: 12,
+      alignment: centered ? WrapAlignment.center : WrapAlignment.start,
+      runAlignment: centered ? WrapAlignment.center : WrapAlignment.start,
       children: options.map((option) {
         final isSelected = selected == option;
 
@@ -60,5 +64,6 @@ class BookingChips extends StatelessWidget {
         );
       }).toList(),
     );
+    return wrap;
   }
 }

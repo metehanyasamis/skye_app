@@ -89,10 +89,10 @@ class _CreateAccountVerificationScreenState
       if (response.success) {
         debugPrint('✅ [CreateAccountVerificationScreen] OTP verified successfully');
         
-        // Navigate to personal information screen
+        // Navigate to personal information screen (pass verification_code for complete-registration)
         Navigator.of(context).pushReplacementNamed(
           PersonalInformationScreen.routeName,
-          arguments: {'phone': _phoneNumber ?? ''},
+          arguments: {'phone': _phoneNumber ?? '', 'verification_code': _otpCode},
         );
         return;
       }

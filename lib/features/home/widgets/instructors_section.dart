@@ -86,7 +86,7 @@ class InstructorsSection extends StatelessWidget {
                               debugPrint('🧭 [InstructorsSection] Pilot tapped: ${pilot.displayName}');
                               Navigator.of(context).pushNamed(
                                 CfiDetailScreen.routeName,
-                                arguments: {'pilotId': pilot.id},
+                                arguments: {'pilot': pilot},
                               );
                             },
                           ),

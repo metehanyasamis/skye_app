@@ -51,8 +51,7 @@ class ApiService {
       ),
     );
   }
-
-  /// Get Dio instance
+// Get Dio instance
   Dio get dio => _dio;
 
   /// Set authorization token
@@ -102,7 +101,7 @@ class ApiService {
         _dio.options.headers['Authorization'] = 'Bearer $token';
         debugPrint('🔑 [ApiService] Token restored from SharedPreferences (length: ${token.length})');
       } else {
-        debugPrint('ℹ️ [ApiService] No token found in SharedPreferences');
+        debugPrint('ℹ️ [ApiService] No token in SharedPreferences – login required for Profile/Edit');
       }
     } catch (e, st) {
       debugPrint('⚠️ [ApiService] Failed to restore token: $e\n$st');

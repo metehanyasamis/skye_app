@@ -1,11 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:skye_app/app.dart';
+import 'package:skye_app/shared/config/mapbox_config.dart' as mapbox_cfg;
+import 'package:skye_app/shared/services/user_address_service.dart';
 import 'package:skye_app/shared/services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint('[main] ensureInitialized ✅');
+
+  await mapbox_cfg.resolveMapboxToken();
+  final token = mapbox_cfg.effectiveMapboxToken;
+  if (token.isNotEmpty) {
+    MapboxOptions.setAccessToken(token);
+    debugPrint('[main] Mapbox token set ✅');
+  }
+
+  await UserAddressService.instance.load();
+  debugPrint('[main] UserAddressService loaded ✅');
 
   // Initialize API service
   ApiService.instance.init();
@@ -25,10 +38,10 @@ void main() async {
       statusBarColor: Colors.transparent,
       systemNavigationBarColor: Colors.transparent,
 
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarIconBrightness: Brightness.dark,
 
-      statusBarBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
 
       // ANDROID 12+ "dark overlay" issue killer:
       systemNavigationBarContrastEnforced: false,

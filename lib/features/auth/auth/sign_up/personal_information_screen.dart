@@ -32,6 +32,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   bool _obscureConfirmPassword = true;
   DateTime? _selectedDate;
   String? _phoneNumber;
+  String? _verificationCode;
 
   String? _firstNameError;
   String? _lastNameError;
@@ -48,7 +49,8 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     final args =
     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     _phoneNumber = args?['phone'] as String?;
-    debugPrint('📞 [PersonalInformationScreen] phone=$_phoneNumber');
+    _verificationCode = args?['verification_code'] as String?;
+    debugPrint('📞 [PersonalInformationScreen] phone=$_phoneNumber verification_code=${_verificationCode != null ? "***" : "null"}');
   }
 
   @override
@@ -144,6 +146,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
       UsageDetailsScreen.routeName,
       arguments: {
         'phone': _phoneNumber ?? '',
+        'verification_code': _verificationCode ?? '',
         'firstName': _firstNameController.text.trim(),
         'lastName': _lastNameController.text.trim(),
         'dateOfBirth': _selectedDate != null

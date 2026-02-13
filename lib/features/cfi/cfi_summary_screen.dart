@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:skye_app/features/cfi/cfi_form_data_holder.dart';
 import 'package:skye_app/features/cfi/cfi_in_review_screen.dart';
+import 'package:skye_app/shared/services/auth_api_service.dart';
 import 'package:skye_app/shared/services/pilot_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
@@ -33,39 +35,39 @@ class _CfiSummaryScreenState extends State<CfiSummaryScreen> {
       subtitle: 'Please review your information before submitting',
       currentStep: 4,
       totalSteps: 4,
+      headerBackgroundColor: AppColors.navy800,
+      headerImagePath: 'assets/images/cfi_headPic.png',
       children: [
+        const SizedBox(height: 24),
+
+        // Profile Section (Create CFI Profile)
+        _buildSection(
+          'Profile',
+          [
+            _buildInfoRow('Spoken Languages', _getSpokenLanguagesValue()),
+            _buildInfoRow('License Number', _getStringValue(widget.formData['license_number'])),
+            _buildInfoRow('State', _getStringValue(widget.formData['state'])),
+            _buildInfoRow('City', _getStringValue(widget.formData['city'])),
+            _buildInfoRow('Address', _getStringValue(widget.formData['address'])),
+            _buildInfoRow('Base Airport(s)', _getStringValue(widget.formData['base_airport'])),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
         // Information Section
         _buildSection(
           'Information',
           [
-            if (widget.formData['license_number'] != null)
-              _buildInfoRow('License Number', widget.formData['license_number']),
-            if (widget.formData['base_airport'] != null)
-              _buildInfoRow('Base Airport', widget.formData['base_airport']),
-            if (widget.formData['country'] != null)
-              _buildInfoRow('Country', widget.formData['country']),
-            if (widget.formData['city'] != null)
-              _buildInfoRow('City', widget.formData['city']),
-            if (widget.formData['address'] != null)
-              _buildInfoRow('Address', widget.formData['address']),
-            if (widget.formData['experience_years'] != null)
-              _buildInfoRow('Experience Years', widget.formData['experience_years']),
-            if (widget.formData['total_flight_hours'] != null)
-              _buildInfoRow('Total Flight Hours', widget.formData['total_flight_hours']),
-            if (widget.formData['hourly_rate'] != null)
-              _buildInfoRow('Hourly Rate', '\$${widget.formData['hourly_rate']}'),
-            if (widget.formData['spoken_languages'] != null && (widget.formData['spoken_languages'] as List).isNotEmpty)
-              _buildInfoRow('Spoken Languages', (widget.formData['spoken_languages'] as List).join(', ')),
-            if (widget.formData['instructor_ratings'] != null && (widget.formData['instructor_ratings'] as List).isNotEmpty)
-              _buildInfoRow('Instructor Ratings', (widget.formData['instructor_ratings'] as List).join(', ')),
-            if (widget.formData['other_licenses'] != null && (widget.formData['other_licenses'] as List).isNotEmpty)
-              _buildInfoRow('Other Licenses', (widget.formData['other_licenses'] as List).join(', ')),
-            if (widget.formData['minimum_booking'] != null)
-              _buildInfoRow('Minimum Booking', widget.formData['minimum_booking']),
-            if (widget.formData['aircraft_ownership'] != null)
-              _buildInfoRow('Aircraft Ownership', widget.formData['aircraft_ownership']),
-            if (widget.formData['notes'] != null && widget.formData['notes'].toString().isNotEmpty)
-              _buildInfoRow('Notes', widget.formData['notes']),
+            _buildInfoRow('Hourly Rate', widget.formData['hourly_rate'] != null ? '\$${widget.formData['hourly_rate']}' : '—'),
+            _buildInfoRow('Instructor Ratings', _getListValue(widget.formData['instructor_ratings'])),
+            _buildInfoRow('Other Licenses', _getListValue(widget.formData['other_licenses'])),
+            _buildInfoRow('Minimum Booking', _getStringValue(widget.formData['minimum_booking'])),
+            _buildInfoRow('Aircraft Ownership', _getStringValue(widget.formData['aircraft_ownership'])),
+            _buildInfoRow(
+              'Selected Aircraft',
+              _getSelectedAircraftsValue(widget.formData['selected_aircrafts']),
+            ),
           ],
         ),
 
@@ -75,80 +77,11 @@ class _CfiSummaryScreenState extends State<CfiSummaryScreen> {
         _buildSection(
           'Experiences',
           [
-            if (widget.formData['total_flight_hours_exp'] != null)
-              _buildInfoRow('Total Flight Hours', widget.formData['total_flight_hours_exp']),
-            if (widget.formData['total_given_hours'] != null)
-              _buildInfoRow('Total Given Hours', widget.formData['total_given_hours']),
-            if (widget.formData['last_12_months_dual_hours'] != null)
-              _buildInfoRow('Last 12 Months Dual Hours', widget.formData['last_12_months_dual_hours']),
-            if (widget.formData['aircraft_experiences'] != null && (widget.formData['aircraft_experiences'] as List).isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.blueInfoLight.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.blueInfo.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Aircraft Type Experience',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.labelBlack,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ...(widget.formData['aircraft_experiences'] as List).map((exp) {
-                      final type = exp['type'] ?? '';
-                      final hours = exp['hours'] ?? '';
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.selectedBlue.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                type,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.selectedBlue,
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '$hours hours',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.labelBlack,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ],
+            _buildInfoRow('Total Flight Hours', _getStringValue(widget.formData['total_flight_hours_exp'])),
+            _buildInfoRow('Total Given Hours', _getStringValue(widget.formData['total_given_hours'])),
+            _buildInfoRow('Last 12 Months Dual Hours', _getStringValue(widget.formData['last_12_months_dual_hours'])),
+            _buildInfoRow('About me', _getStringValue(widget.formData['notes'])),
+            _buildAircraftExperiencesBlock(widget.formData['aircraft_experiences']),
           ],
         ),
 
@@ -162,6 +95,112 @@ class _CfiSummaryScreenState extends State<CfiSummaryScreen> {
 
         const SizedBox(height: 40),
       ],
+    );
+  }
+
+  String _getStringValue(dynamic value) {
+    if (value == null) return '—';
+    final s = value.toString().trim();
+    return s.isEmpty ? '—' : s;
+  }
+
+  String _getListValue(dynamic value) {
+    if (value == null) return '—';
+    if (value is! List || value.isEmpty) return '—';
+    return value.map((e) => e.toString()).join(', ');
+  }
+
+  String _getSpokenLanguagesValue() {
+    final display = widget.formData['spoken_languages_display']?.toString().trim();
+    if (display != null && display.isNotEmpty) return display;
+    return _getListValue(widget.formData['spoken_languages']);
+  }
+
+  String _getSelectedAircraftsValue(dynamic value) {
+    if (value == null) return '—';
+    if (value is! List || value.isEmpty) return '—';
+    return value.map((a) => '${a['name'] ?? ''} (${a['code'] ?? ''})').join(', ');
+  }
+
+  Widget _buildAircraftExperiencesBlock(dynamic value) {
+    final list = value is List ? value : <dynamic>[];
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.blueInfoLight.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.blueInfo.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Aircraft Type Experience',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.labelBlack,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (list.isEmpty)
+            Text(
+              '—',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.labelBlack60.withValues(alpha: 0.7),
+              ),
+            )
+          else
+            ...list.map<Widget>((exp) {
+              final type = exp['type'] ?? '';
+              final name = exp['name']?.toString();
+              final hours = exp['hours'] ?? '';
+              final label = name != null && name.isNotEmpty ? '$name ($type)' : type;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.selectedBlue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.selectedBlue,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$hours hours',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.labelBlack,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
     );
   }
 
@@ -215,10 +254,6 @@ class _CfiSummaryScreenState extends State<CfiSummaryScreen> {
   }
 
   Widget _buildInfoRow(String label, String value) {
-    if (value.isEmpty || value == 'null') {
-      return const SizedBox.shrink();
-    }
-    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -259,11 +294,9 @@ class _CfiSummaryScreenState extends State<CfiSummaryScreen> {
     final requiredFields = <String, String>{
       'license_number': 'License Number',
       'base_airport': 'Base Airport',
-      'country': 'Country',
+      'state': 'State',
       'city': 'City',
       'address': 'Address',
-      'experience_years': 'Experience Years',
-      'total_flight_hours': 'Total Flight Hours',
       'hourly_rate': 'Hourly Rate',
     };
 
@@ -282,7 +315,7 @@ class _CfiSummaryScreenState extends State<CfiSummaryScreen> {
         SnackBar(
           content: Text('Please fill in all required fields: ${missingFields.join(', ')}'),
           backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 4),
+          duration: const Duration(milliseconds: 2500),
         ),
       );
       return false;
@@ -303,45 +336,62 @@ class _CfiSummaryScreenState extends State<CfiSummaryScreen> {
     try {
       DebugLogger.log('CfiSummaryScreen', 'Submitting application', widget.formData);
 
-      // Prepare data for backend
-      // NOTE: Backend requires these fields (marked with *):
-      // package_id*, pilot_type*, desired_level*, license_number*, base_airport*,
-      // country*, city*, address*, experience_years*, total_flight_hours*, hourly_rate*
-      // TODO: Get valid package_id and pilot_type from backend API
+      // POST /api/pilot/applications - pilot_type: "pilot" (CFI/Instructor)
+      final exps = (widget.formData['aircraft_experiences'] as List?) ?? [];
+      final aircraftTypes = <int>[];
+      final aircraftHours = <int>[];
+      final aircraftOwns = <bool>[];
+      final owns = widget.formData['aircraft_ownership'] == 'Yes';
+      for (final e in exps) {
+        if (e is Map) {
+          final typeId = int.tryParse(e['type']?.toString() ?? '');
+          aircraftTypes.add(typeId ?? 0);
+          aircraftHours.add(int.tryParse(e['hours']?.toString() ?? '') ?? 0);
+          aircraftOwns.add(owns);
+        }
+      }
+
       final submitData = <String, dynamic>{
-        // Backend requires package_id - need valid ID from backend
-        // TODO: Replace with actual package_id from backend API
-        'package_id': widget.formData['package_id'] ?? 2, // Placeholder - needs valid value
-        // Backend requires pilot_type - need valid value from backend
-        // TODO: Replace with actual pilot_type from backend API
-        'pilot_type': 'cfi', // Placeholder - needs valid value
-        'desired_level': widget.formData['desired_level'] ?? 'CFI',
+        'pilot_type': 'pilot',
+        'package_id': widget.formData['package_id'],
+        'state_id': int.tryParse(widget.formData['state_id']?.toString() ?? '') ?? 1,
+        'city_id': int.tryParse(widget.formData['city_id']?.toString() ?? '') ?? 101,
+        'airport_ids': (widget.formData['airport_ids'] as List?) ?? [],
+        'phone_number': widget.formData['phone_number']?.toString() ?? '',
+        'about': widget.formData['notes']?.toString() ?? '',
         'license_number': widget.formData['license_number']?.toString() ?? '',
-        'base_airport': widget.formData['base_airport']?.toString() ?? '',
-        'country': widget.formData['country']?.toString() ?? '',
-        'city': widget.formData['city']?.toString() ?? '',
         'address': widget.formData['address']?.toString() ?? '',
-        'experience_years': int.tryParse(widget.formData['experience_years']?.toString() ?? '') ?? 0,
-        'total_flight_hours': int.tryParse(widget.formData['total_flight_hours']?.toString() ?? '') ?? 0,
         'hourly_rate': int.tryParse(widget.formData['hourly_rate']?.toString() ?? '') ?? 0,
-        'notes': widget.formData['notes']?.toString() ?? '',
+        'minimum_booking': widget.formData['minimum_booking']?.toString() ?? '',
         'spoken_languages': widget.formData['spoken_languages'] ?? [],
         'instructor_ratings': widget.formData['instructor_ratings'] ?? [],
         'other_licenses': widget.formData['other_licenses'] ?? [],
-        'aircraft_experiences': (widget.formData['aircraft_experiences'] as List?)?.map((e) {
-          return {
-            'aircraft_type': e['type'] ?? '',
-            'hours': int.tryParse(e['hours']?.toString() ?? '') ?? 0,
-            'owns_aircraft': widget.formData['aircraft_ownership'] == 'Yes',
-          };
-        }).toList() ?? [],
+        'aircraft_experience_types': aircraftTypes,
+        'aircraft_experience_hours': aircraftHours,
+        'aircraft_experience_owns': aircraftOwns,
+        'notes': widget.formData['notes']?.toString() ?? '',
       };
+
+      submitData['base_airport'] = widget.formData['base_airport']?.toString() ?? '';
+      submitData['country'] = widget.formData['state']?.toString() ?? '';
+      submitData['city'] = widget.formData['city']?.toString() ?? '';
+      submitData['total_flight_hours'] = int.tryParse(widget.formData['total_flight_hours_exp']?.toString() ?? widget.formData['total_flight_hours']?.toString() ?? '') ?? 0;
+
+      // Try to get phone from auth user
+      try {
+        final user = await AuthApiService.instance.getMe();
+        final phone = user['phone'] ?? user['phone_number']?.toString();
+        if (phone != null && phone.toString().isNotEmpty) {
+          submitData['phone_number'] = phone.toString();
+        }
+      } catch (_) {}
       
       DebugLogger.log('CfiSummaryScreen', 'Submitting with data', submitData);
 
       await PilotApiService.instance.submitApplication(submitData);
 
       if (mounted) {
+        CfiFormDataHolder.clear(); // Clear after successful submit
         // Navigate to in-review screen
         Navigator.of(context).pushReplacementNamed(CfiInReviewScreen.routeName);
       }
@@ -404,7 +454,7 @@ class _CfiSummaryScreenState extends State<CfiSummaryScreen> {
               ],
             ),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 8),
+            duration: const Duration(milliseconds: 2500),
             action: SnackBarAction(
               label: 'OK',
               textColor: Colors.white,

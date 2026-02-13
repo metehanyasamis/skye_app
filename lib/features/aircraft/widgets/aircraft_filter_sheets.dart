@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:skye_app/shared/models/location_models.dart';
+import 'package:skye_app/shared/services/aircraft_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
+import 'package:skye_app/shared/widgets/location_picker_sheets.dart';
 
 /// Filter bottom sheets for aircraft listing. Stay on same screen; no navigation.
-
-// Placeholder until GET /aircraft-types exists.
-const _aircraftTypes = [
-  (id: 1, name: 'C172'),
-  (id: 2, name: 'PA-28'),
-  (id: 3, name: 'DA-40'),
-  (id: 4, name: 'C152'),
-  (id: 5, name: 'SR20'),
-  (id: 6, name: 'SR22'),
-];
 
 const _sheetTitleStyle = TextStyle(
   fontSize: 18,
@@ -20,6 +13,16 @@ const _sheetTitleStyle = TextStyle(
 );
 
 const _sheetPadding = EdgeInsets.symmetric(horizontal: 24, vertical: 20);
+
+const _sheetTextStyle = TextStyle(
+  fontSize: 14,
+  color: AppColors.grayPrimary,
+);
+
+const _sheetSubtitleStyle = TextStyle(
+  fontSize: 12,
+  color: AppColors.grayDark,
+);
 
 Widget _sheetFrame({
   required String title,
@@ -98,7 +101,7 @@ Widget _sheetFrame({
   );
 }
 
-/// Rent/Buy: All, Rental, Sale
+/// Rent/Buy: All, Rental, Sale (no search)
 void showRentBuySheet(
   BuildContext context, {
   required String? currentType,
@@ -115,15 +118,17 @@ void showRentBuySheet(
         return DraggableScrollableSheet(
           initialChildSize: 0.36,
           minChildSize: 0.2,
-          maxChildSize: 0.5,
+          maxChildSize: 0.95,
           expand: false,
           builder: (_, scroll) => _sheetFrame(
             title: 'Rent / Buy',
             onApply: () {
+              debugPrint('✅ [showRentBuySheet] Apply tapped, selected: $selected');
               Navigator.of(ctx).pop();
               onApply(selected);
             },
             onClear: () {
+              debugPrint('✅ [showRentBuySheet] Clear tapped');
               selected = null;
               setModal(() {});
             },
@@ -131,6 +136,7 @@ void showRentBuySheet(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   _choiceTile(ctx, setModal, 'All', null, selected, (v) => selected = v),
                   _choiceTile(ctx, setModal, 'Rental', 'rental', selected, (v) => selected = v),
@@ -155,7 +161,7 @@ Widget _choiceTile(
 ) {
   final isSelected = selected == value;
   return InkWell(
-    onTap: () => setModal(() => onSelect(value)),
+    onTap: () => setModal(() => onSelect(isSelected ? null : value)),
     borderRadius: BorderRadius.circular(12),
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
@@ -170,7 +176,7 @@ Widget _choiceTile(
       ),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 16, color: AppColors.labelBlack))),
+          Expanded(child: Text(label, style: _sheetTextStyle)),
           if (isSelected) const Icon(Icons.check_circle, color: AppColors.navy800, size: 22),
         ],
       ),
@@ -178,72 +184,248 @@ Widget _choiceTile(
   );
 }
 
-/// Aircraft Type: list (placeholder ids)
+/// Aircraft Type: API list, code 1st / name 2nd, search by both, draggable sheet
 void showAircraftTypeSheet(
   BuildContext context, {
   required int? currentId,
   required void Function(int?) onApply,
 }) {
-  int? selected = currentId;
-
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setModal) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.2,
-          maxChildSize: 0.7,
-          expand: false,
-          builder: (_, scroll) => _sheetFrame(
-            title: 'Aircraft Type',
-            onApply: () {
-              Navigator.of(ctx).pop();
-              onApply(selected);
-            },
-            onClear: () {
-              selected = null;
-              setModal(() {});
-            },
-            child: ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: _aircraftTypes.length,
-              itemBuilder: (_, i) {
-                final t = _aircraftTypes[i];
-                final isSelected = selected == t.id;
-                return InkWell(
-                  onTap: () => setModal(() => selected = isSelected ? null : t.id),
-                  borderRadius: BorderRadius.circular(12),
+    builder: (ctx) => _AircraftTypeFilterSheet(
+      currentId: currentId,
+      onApply: onApply,
+    ),
+  );
+}
+
+class _AircraftTypeFilterSheet extends StatefulWidget {
+  const _AircraftTypeFilterSheet({
+    required this.currentId,
+    required this.onApply,
+  });
+
+  final int? currentId;
+  final void Function(int?) onApply;
+
+  @override
+  State<_AircraftTypeFilterSheet> createState() => _AircraftTypeFilterSheetState();
+}
+
+class _AircraftTypeFilterSheetState extends State<_AircraftTypeFilterSheet> {
+  List<AircraftTypeModel> _types = [];
+  bool _loading = true;
+  String? _error;
+  int? _selected;
+  final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.currentId;
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final list = await AircraftApiService.instance.getAircraftTypes();
+      if (mounted) {
+        setState(() {
+          _types = list;
+          _loading = false;
+        });
+        debugPrint('✅ [AircraftTypeFilterSheet] Loaded ${list.length} aircraft types');
+      }
+    } catch (e) {
+      debugPrint('❌ [AircraftTypeFilterSheet] Load error: $e');
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+          _types = [];
+        });
+      }
+    }
+  }
+
+  List<AircraftTypeModel> get _filtered {
+    final q = _searchController.text.toLowerCase().trim();
+    if (q.isEmpty) return _types;
+    return _types
+        .where((t) =>
+            t.code.toLowerCase().contains(q) || t.name.toLowerCase().contains(q))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      minChildSize: 0.2,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                    margin: const EdgeInsets.only(bottom: 8),
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 12),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.navy800.withValues(alpha: 0.08) : null,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected ? AppColors.navy800 : AppColors.borderLight,
-                        width: isSelected ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text(t.name, style: const TextStyle(fontSize: 16, color: AppColors.labelBlack))),
-                        if (isSelected) const Icon(Icons.check_circle, color: AppColors.navy800, size: 22),
-                      ],
+                      color: AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                );
-              },
+                ),
+                Padding(
+                  padding: _sheetPadding.copyWith(bottom: 16),
+                  child: Text('Aircraft Type', style: _sheetTitleStyle),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: 'Search by code or name',
+                      hintStyle: _sheetSubtitleStyle,
+                      filled: true,
+                      fillColor: AppColors.white,
+                      prefixIcon: const Icon(Icons.search, color: AppColors.grayPrimary, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.borderLight),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    style: _sheetTextStyle,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _error != null
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                                  const SizedBox(height: 8),
+                                  TextButton(onPressed: _load, child: const Text('Retry')),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              controller: scrollController,
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              itemCount: _filtered.length,
+                              itemBuilder: (_, i) {
+                                final t = _filtered[i];
+                                final isSelected = _selected == t.id;
+                                return InkWell(
+                                  onTap: () => setState(() => _selected = isSelected ? null : t.id),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? AppColors.navy800.withValues(alpha: 0.08) : null,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isSelected ? AppColors.navy800 : AppColors.borderLight,
+                                        width: isSelected ? 1.5 : 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(t.code, style: _sheetTextStyle),
+                                              const SizedBox(height: 2),
+                                              Text(t.name, style: _sheetSubtitleStyle),
+                                            ],
+                                          ),
+                                        ),
+                                        if (isSelected) const Icon(Icons.check_circle, color: AppColors.navy800, size: 22),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                ),
+                Padding(
+                  padding: _sheetPadding,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            debugPrint('✅ [AircraftTypeFilterSheet] Clear tapped');
+                            setState(() => _selected = null);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.labelBlack,
+                            side: const BorderSide(color: AppColors.borderLight),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Clear'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            debugPrint('✅ [AircraftTypeFilterSheet] Apply tapped, selected: $_selected');
+                            Navigator.of(context).pop();
+                            widget.onApply(_selected);
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.navy800,
+                            foregroundColor: AppColors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Apply'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         );
       },
-    ),
-  );
+    );
+  }
 }
 
 void _showLocationFieldSheet(
@@ -262,7 +444,7 @@ void _showLocationFieldSheet(
     builder: (ctx) => DraggableScrollableSheet(
       initialChildSize: 0.36,
       minChildSize: 0.2,
-      maxChildSize: 0.5,
+      maxChildSize: 0.95,
       expand: false,
       builder: (_, __) => _sheetFrame(
         title: title,
@@ -278,16 +460,16 @@ void _showLocationFieldSheet(
             controller: controller,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6)),
+              hintStyle: _sheetSubtitleStyle,
               filled: true,
-              fillColor: AppColors.cfiBackground,
+              fillColor: AppColors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderSide: const BorderSide(color: AppColors.borderLight),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
-            style: const TextStyle(fontSize: 16, color: AppColors.labelBlack),
+            style: _sheetTextStyle,
             textInputAction: TextInputAction.done,
           ),
         ),
@@ -299,43 +481,54 @@ void _showLocationFieldSheet(
 void showStateSheet(
   BuildContext context, {
   required String? currentValue,
-  required void Function(String?) onApply,
-}) {
-  _showLocationFieldSheet(
-    context,
-    title: 'State',
-    hint: 'e.g. California, Texas',
-    currentValue: currentValue,
-    onApply: onApply,
-  );
+  required void Function(String?, StateModel?)? onApply,
+  StateModel? selectedState,
+}) async {
+  StateModel? sel = selectedState ?? (currentValue != null && currentValue.isNotEmpty ? StateModel(id: 0, name: currentValue, code: '') : null);
+  final picked = await showStatePickerSheet(context, selected: sel);
+  if (picked != null && onApply != null) {
+    onApply(picked.name, picked);
+  }
 }
 
 void showCitySheet(
   BuildContext context, {
+  required int? stateId,
   required String? currentValue,
-  required void Function(String?) onApply,
-}) {
-  _showLocationFieldSheet(
-    context,
-    title: 'City',
-    hint: 'e.g. Istanbul, Miami',
-    currentValue: currentValue,
-    onApply: onApply,
-  );
+  required void Function(String?, CityModel?)? onApply,
+  CityModel? selectedCity,
+}) async {
+  if (stateId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Select State first'),
+        duration: Duration(milliseconds: 2500),
+      ),
+    );
+    return;
+  }
+  CityModel? sel = selectedCity ?? (currentValue != null && currentValue.isNotEmpty ? CityModel(id: 0, name: currentValue) : null);
+  final picked = await showCityPickerSheet(context, stateId: stateId, selected: sel);
+  if (picked != null && onApply != null) {
+    onApply(picked.name, picked);
+  }
 }
 
 void showAirportSheet(
   BuildContext context, {
   required String? currentValue,
-  required void Function(String?) onApply,
-}) {
-  _showLocationFieldSheet(
+  required void Function(String?)? onApply,
+  int? cityId,
+}) async {
+  final picked = await showAirportPickerSheet(
     context,
-    title: 'Airport',
-    hint: 'e.g. KBNA, LTFM',
-    currentValue: currentValue,
-    onApply: onApply,
+    cityId: cityId,
+    initialSelected: [],
+    multiSelect: false,
   );
+  if (picked != null && onApply != null) {
+    onApply(picked.displayLabel);
+  }
 }
 
 /// Price: min / max + sort arrow (↑ ucuzdan pahalıya, ↓ pahalıdan ucuza)
@@ -360,7 +553,7 @@ void showPriceSheet(
         return DraggableScrollableSheet(
           initialChildSize: 0.4,
           minChildSize: 0.2,
-          maxChildSize: 0.55,
+          maxChildSize: 0.95,
           expand: false,
           builder: (_, __) => _sheetFrame(
             title: 'Price Range',
@@ -371,8 +564,10 @@ void showPriceSheet(
               onApply(min, max, sort);
             },
             onClear: () {
+              debugPrint('✅ [showPriceSheet] Clear tapped');
               minCtrl.clear();
               maxCtrl.clear();
+              sort = 'price_asc';
               setModal(() {});
             },
             child: Padding(
@@ -386,12 +581,13 @@ void showPriceSheet(
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: 'Min (\$)',
+                        labelStyle: _sheetSubtitleStyle,
                         filled: true,
-                        fillColor: AppColors.cfiBackground,
+                        fillColor: AppColors.white,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
-                      style: const TextStyle(fontSize: 16, color: AppColors.labelBlack),
+                      style: _sheetTextStyle,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -401,12 +597,13 @@ void showPriceSheet(
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: 'Max (\$)',
+                        labelStyle: _sheetSubtitleStyle,
                         filled: true,
-                        fillColor: AppColors.cfiBackground,
+                        fillColor: AppColors.white,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
-                      style: const TextStyle(fontSize: 16, color: AppColors.labelBlack),
+                      style: _sheetTextStyle,
                     ),
                   ),
                   const SizedBox(width: 8),

@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:skye_app/shared/models/pilot_model.dart';
+import 'package:skye_app/shared/services/api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
 
@@ -15,7 +19,38 @@ class SafetyPilotCard extends StatelessWidget {
     required this.location,
     required this.airport,
     required this.price,
+    this.pilot,
+    this.onTap,
   });
+
+  /// PilotModel ile oluştur – API’den gelen veri için.
+  factory SafetyPilotCard.fromPilot(
+    PilotModel pilot, {
+    VoidCallback? onTap,
+  }) {
+    final p = pilot.pilotProfile;
+    return SafetyPilotCard(
+      pilot: pilot,
+      onTap: onTap,
+      name: pilot.displayName,
+      rating: p?.rating ?? 0,
+      languages: p?.languages.isNotEmpty == true
+          ? p!.languages.map((l) => l.languageCode.toUpperCase()).join(', ')
+          : 'N/A',
+      hours: p?.totalFlightHours != null && p!.totalFlightHours! > 0
+          ? '${p.totalFlightHours}+ hours'
+          : 'N/A',
+      instructorRatings: p?.instructorRatings.isNotEmpty == true
+          ? p!.instructorRatings.map((r) => r.ratingCode).join(', ')
+          : 'N/A',
+      otherLicenses: p?.otherLicenses.isNotEmpty == true
+          ? p!.otherLicenses.map((l) => l.licenseCode).join(', ')
+          : 'N/A',
+      location: p?.location ?? 'N/A',
+      airport: 'N/A',
+      price: p?.hourlyRate?.toInt() ?? 0,
+    );
+  }
 
   final String name;
   final double rating;
@@ -26,9 +61,56 @@ class SafetyPilotCard extends StatelessWidget {
   final String location;
   final String airport;
   final int price;
+  final PilotModel? pilot;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final child = _buildContent(context);
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: child,
+      );
+    }
+    return child;
+  }
+
+  Widget _buildPlaceholder() {
+    return const Center(
+      child: Icon(
+        Icons.person,
+        size: 80,
+        color: AppColors.textSecondary,
+      ),
+    );
+  }
+
+  Future<Uint8List?> _loadImageWithAuth(String imageUrl) async {
+    try {
+      String fullUrl = imageUrl;
+      if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+        if (imageUrl.startsWith('/')) {
+          fullUrl = 'https://skye.dijicrea.net$imageUrl';
+        } else {
+          fullUrl = 'https://skye.dijicrea.net/storage/$imageUrl';
+        }
+      }
+      final dio = ApiService.instance.dio;
+      final imageDio = Dio();
+      imageDio.options.headers.addAll(dio.options.headers);
+      imageDio.options.headers['Accept'] = 'image/*';
+      final response = await imageDio.get<Uint8List>(
+        fullUrl,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return response.data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Widget _buildContent(BuildContext context) {
     return Container(
       height: 170,
       decoration: BoxDecoration(
@@ -51,13 +133,23 @@ class SafetyPilotCard extends StatelessWidget {
                     bottomLeft: Radius.circular(10),
                   ),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.person,
-                    size: 80,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                clipBehavior: Clip.antiAlias,
+                child: pilot?.profilePhotoPath != null
+                    ? FutureBuilder<Uint8List?>(
+                        future: _loadImageWithAuth(pilot!.profilePhotoPath!),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData && snapshot.data != null) {
+                            return Image.memory(
+                              snapshot.data!,
+                              fit: BoxFit.cover,
+                              width: 164,
+                              height: 170,
+                            );
+                          }
+                          return _buildPlaceholder();
+                        },
+                      )
+                    : _buildPlaceholder(),
               ),
               Positioned(
                 bottom: 10,

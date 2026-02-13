@@ -10,25 +10,25 @@ class PilotApiService {
 
   static final PilotApiService instance = PilotApiService._();
 
-  /// Get all active and approved pilots with full profile details
+  /// Get approved CFI pilots for listing (onaylanan CFI pilotları).
   /// 
   /// Endpoint: GET /api/pilots
-  /// Query params: page (default: 1), per_page (default: 15, max: 100)
+  /// Query params: page, per_page, pilot_type (pilot=CFI), status (approved)
   /// Response: { "data": [...], "meta": {...}, "links": {...} }
   Future<PilotListResponse> getPilots({
     int? page,
     int? perPage,
+    String? pilotType,
+    String? status,
   }) async {
     try {
-      debugPrint('👨‍✈️ [PilotApiService] getPilots: page=$page, perPage=$perPage');
+      debugPrint('👨‍✈️ [PilotApiService] getPilots: page=$page, perPage=$perPage, pilotType=$pilotType, status=$status');
 
       final queryParams = <String, dynamic>{};
-      if (page != null) {
-        queryParams['page'] = page;
-      }
-      if (perPage != null) {
-        queryParams['per_page'] = perPage;
-      }
+      if (page != null) queryParams['page'] = page;
+      if (perPage != null) queryParams['per_page'] = perPage;
+      if (pilotType != null && pilotType.isNotEmpty) queryParams['pilot_type'] = pilotType;
+      if (status != null && status.isNotEmpty) queryParams['status'] = status;
 
       final response = await ApiService.instance.dio.get(
         '/pilots',
@@ -84,6 +84,55 @@ class PilotApiService {
       rethrow;
     } catch (e, st) {
       debugPrint('❌ [PilotApiService] getPilot unexpected error: $e\n$st');
+      rethrow;
+    }
+  }
+
+  /// Get single pilot/CFI/Safety Pilot application details (detay ekranı).
+  /// 
+  /// Endpoint: GET /api/pilot/applications/{id} (RTF doc)
+  /// Response: { "data": { id, pilot_type, full_name, hourly_rate, ... } }
+  Future<Map<String, dynamic>> getPilotApplication(int id) async {
+    try {
+      debugPrint('👨‍✈️ [PilotApiService] getPilotApplication: id=$id');
+
+      final response = await ApiService.instance.dio.get(
+        '/pilot/applications/$id',
+      );
+
+      debugPrint('✅ [PilotApiService] getPilotApplication success');
+
+      final data = response.data as Map<String, dynamic>?;
+      return data?['data'] as Map<String, dynamic>? ?? {};
+    } on DioException catch (e) {
+      debugPrint('❌ [PilotApiService] getPilotApplication error: ${e.message}');
+      rethrow;
+    } catch (e, st) {
+      debugPrint('❌ [PilotApiService] getPilotApplication unexpected error: $e\n$st');
+      rethrow;
+    }
+  }
+
+  /// List authenticated pilot's applications (pending, approved, etc.).
+  /// 
+  /// Endpoint: GET /api/pilot/applications (RTF doc)
+  /// Response: { "data": [{ id, pilot_type, status, full_name, ... }, ...] }
+  Future<List<Map<String, dynamic>>> getPilotApplications() async {
+    try {
+      debugPrint('👨‍✈️ [PilotApiService] getPilotApplications');
+
+      final response = await ApiService.instance.dio.get('/pilot/applications');
+
+      debugPrint('✅ [PilotApiService] getPilotApplications success');
+
+      final data = response.data as Map<String, dynamic>?;
+      final list = data?['data'] as List<dynamic>?;
+      return list?.map((e) => e as Map<String, dynamic>).toList() ?? [];
+    } on DioException catch (e) {
+      debugPrint('❌ [PilotApiService] getPilotApplications error: ${e.message}');
+      rethrow;
+    } catch (e, st) {
+      debugPrint('❌ [PilotApiService] getPilotApplications unexpected error: $e\n$st');
       rethrow;
     }
   }

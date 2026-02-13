@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:skye_app/shared/models/location_models.dart';
 import 'package:skye_app/shared/services/aircraft_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
 import 'package:skye_app/shared/widgets/booking_chips.dart';
+import 'package:skye_app/shared/widgets/location_picker_sheets.dart';
 import 'package:skye_app/shared/widgets/primary_button.dart';
 
 
@@ -28,6 +30,9 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
   final _dryPriceController = TextEditingController();
 
   String _listingType = 'rental'; // 'rental' | 'sale'
+  StateModel? _selectedStateModel;
+  CityModel? _selectedCityModel;
+  List<AirportModel> _selectedAirportModels = [];
   bool _submitting = false;
 
   @override
@@ -72,6 +77,7 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
         const SnackBar(
           content: Text('Please fill Aircraft name and Aircraft brand'),
           backgroundColor: Colors.orange,
+          duration: Duration(milliseconds: 2500),
         ),
       );
       return;
@@ -80,17 +86,18 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
     setState(() => _submitting = true);
     FocusScope.of(context).unfocus();
 
-    final city = _cityController.text.trim();
-    final country = _countryController.text.trim();
-    final location = [city, country].where((s) => s.isNotEmpty).join(', ');
+    final stateName = _selectedStateModel?.name ?? _countryController.text.trim();
+    final cityName = _selectedCityModel?.name ?? _cityController.text.trim();
+    final location = [cityName, stateName].where((s) => s.isNotEmpty).join(', ');
     final seatCount = int.tryParse(_seatsController.text.trim());
     final wetPrice = double.tryParse(_wetPriceController.text.trim().replaceAll(',', '.'));
     final dryPrice = double.tryParse(_dryPriceController.text.trim().replaceAll(',', '.'));
 
+    final baseAirportStr = _selectedAirportModels.map((a) => a.displayLabel).join(', ');
     final body = <String, dynamic>{
       'title': title,
       'model': model,
-      'base_airport': _baseAirportsController.text.trim(),
+      'base_airport': baseAirportStr.isNotEmpty ? baseAirportStr : _baseAirportsController.text.trim(),
       'location': location.isNotEmpty ? location : _addressController.text.trim(),
       'address': _addressController.text.trim(),
       'listing_type': _listingType,
@@ -105,7 +112,11 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
       await AircraftApiService.instance.createAircraftListing(body);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aircraft listing created'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Aircraft listing created'),
+          backgroundColor: Colors.green,
+          duration: Duration(milliseconds: 2500),
+        ),
       );
       Navigator.of(context).pop();
     } on DioException catch (e) {
@@ -113,13 +124,21 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
       setState(() => _submitting = false);
       final msg = e.response?.data?.toString() ?? e.message ?? 'Request failed';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to create listing: $msg'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Failed to create listing: $msg'),
+          backgroundColor: Colors.red,
+          duration: const Duration(milliseconds: 2500),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to create listing: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Failed to create listing: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(milliseconds: 2500),
+        ),
       );
     }
   }
@@ -369,10 +388,28 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      _FormFieldWithIcon(
+                      _LocationPickerField(
                         label: 'Base airport(s)',
-                        controller: _baseAirportsController,
                         icon: Icons.flight_takeoff,
+                        value: _selectedAirportModels.map((a) => a.displayLabel).join(', '),
+                        onTap: () async {
+                          final picked = await showAirportPickerSheet(
+                            context,
+                            cityId: _selectedCityModel?.id,
+                            initialSelected: _selectedAirportModels,
+                            multiSelect: true,
+                          );
+                          if (picked != null && mounted) {
+                            setState(() {
+                              if (!_selectedAirportModels.any((a) => a.id == picked.id)) {
+                                _selectedAirportModels.add(picked);
+                              }
+                            });
+                          }
+                        },
+                        onClear: _selectedAirportModels.isNotEmpty
+                            ? () => setState(() => _selectedAirportModels.clear())
+                            : null,
                       ),
                       const SizedBox(height: 24),
 
@@ -385,18 +422,66 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: _FormFieldWithIcon(
-                              label: 'Country',
-                              controller: _countryController,
+                            child: _LocationPickerField(
+                              label: 'State',
                               icon: Icons.public,
+                              value: _selectedStateModel?.name ?? _countryController.text,
+                              onTap: () async {
+                                final picked = await showStatePickerSheet(
+                                  context,
+                                  selected: _selectedStateModel,
+                                );
+                                if (picked != null && mounted) {
+                                  setState(() {
+                                    _selectedStateModel = picked;
+                                    _countryController.text = picked.name;
+                                    _selectedCityModel = null;
+                                    _cityController.clear();
+                                  });
+                                }
+                              },
+                              onClear: _selectedStateModel != null
+                                  ? () => setState(() {
+                                        _selectedStateModel = null;
+                                        _countryController.clear();
+                                      })
+                                  : null,
                             ),
                           ),
                           const SizedBox(width: 20),
                           Expanded(
-                            child: _FormFieldWithIcon(
+                            child: _LocationPickerField(
                               label: 'City',
-                              controller: _cityController,
                               icon: Icons.location_city,
+                              value: _selectedCityModel?.name ?? _cityController.text,
+                              onTap: () async {
+                                if (_selectedStateModel == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Select State first'),
+                                      duration: Duration(milliseconds: 2500),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                final picked = await showCityPickerSheet(
+                                  context,
+                                  stateId: _selectedStateModel!.id,
+                                  selected: _selectedCityModel,
+                                );
+                                if (picked != null && mounted) {
+                                  setState(() {
+                                    _selectedCityModel = picked;
+                                    _cityController.text = picked.name;
+                                  });
+                                }
+                              },
+                              onClear: _selectedCityModel != null
+                                  ? () => setState(() {
+                                        _selectedCityModel = null;
+                                        _cityController.clear();
+                                      })
+                                  : null,
                             ),
                           ),
                         ],
@@ -475,6 +560,66 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LocationPickerField extends StatelessWidget {
+  const _LocationPickerField({
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.onTap,
+    this.onClear,
+  });
+
+  final String label;
+  final IconData icon;
+  final String value;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.normal,
+            color: AppColors.labelDarkSecondary,
+            height: 24 / 12,
+          ),
+        ),
+        const SizedBox(height: 4),
+        InkWell(
+          onTap: onTap,
+          child: Row(
+            children: [
+              Icon(icon, size: 24, color: AppColors.labelBlack),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  value.isEmpty ? 'Select...' : value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: value.isEmpty ? AppColors.textSecondary : AppColors.labelBlack,
+                  ),
+                ),
+              ),
+              if (onClear != null)
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: onClear,
+                  padding: EdgeInsets.zero,
+                ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+      ],
     );
   }
 }

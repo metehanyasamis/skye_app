@@ -5,6 +5,7 @@ class AppColors {
   static const primaryBlue = Color(0xFF346A9A); // Ana mavi
   static const darkBlue = Color(0xFF2B4E71); // Koyu mavi
   static const white = Color(0xFFFFFFFF); // Beyaz
+  static const offWhite = Color(0xFFF5F5F5); // Kırık beyaz
 
   // Navy variations (based on darkBlue #2B4E71)
   static const navy900 = Color(0xFF1B2A41); // En koyu

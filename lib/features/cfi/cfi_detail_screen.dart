@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:skye_app/features/cfi/pilot_detail_screen.dart';
+import 'package:skye_app/shared/models/pilot_model.dart';
+import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
 
-import 'package:skye_app/shared/theme/app_colors.dart';
-
+/// CFI detay ekranı – GET /api/pilots/{id} endpoint’ini kullanır.
 class CfiDetailScreen extends StatelessWidget {
   const CfiDetailScreen({super.key});
 
@@ -10,43 +12,60 @@ class CfiDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🧑‍✈️ [CfiDetailScreen] build() started');
+    debugPrint('🧑‍✈️ [CfiDetailScreen] build()');
 
     SystemUIHelper.setLightStatusBar();
-    debugPrint('✅ [CfiDetailScreen] SystemChrome.setSystemUIOverlayStyle applied');
+
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final pilot = args?['pilot'] as PilotModel?;
+    final pilotId = args?['pilotId'] ?? args?['applicationId'];
+    if (pilot != null) {
+      return PilotDetailScreen(pilot: pilot);
+    }
+    if (pilotId != null) {
+      final id = pilotId is int ? pilotId : int.tryParse(pilotId.toString());
+      if (id != null) {
+        return PilotDetailScreen(pilotId: id);
+      }
+    }
 
     return Scaffold(
       backgroundColor: AppColors.cfiBackground,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Top header with back and favorite
-            Builder(
-              builder: (context) {
-                debugPrint('🧩 [CfiDetailScreen] Header built');
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: AppColors.labelBlack),
-                        onPressed: () {
-                          debugPrint('⬅️ [CfiDetailScreen] Back pressed -> pop()');
-                          Navigator.of(context).pop();
-                        },
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: AppColors.labelBlack),
+                      onPressed: () {
+                        debugPrint('⬅️ [CfiDetailScreen] Back pressed -> pop()');
+                        Navigator.of(context).pop();
+                      },
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(44, 44),
+                        padding: const EdgeInsets.all(8),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.favorite_border, color: AppColors.labelBlack),
-                        onPressed: () {
-                          debugPrint('❤️ [CfiDetailScreen] Favorite pressed');
-                        },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.favorite_border, color: AppColors.labelBlack),
+                      onPressed: () {
+                        debugPrint('❤️ [CfiDetailScreen] Favorite pressed');
+                      },
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(44, 44),
+                        padding: const EdgeInsets.all(8),
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    ),
+                  ],
+                ),
+              ),
 
             const SizedBox(height: 8),
 
@@ -196,6 +215,7 @@ class CfiDetailScreen extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

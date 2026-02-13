@@ -7,6 +7,7 @@ import 'package:skye_app/features/aircraft/aircraft_post_screen.dart';
 import 'package:skye_app/features/aircraft/widgets/aircraft_filter_sheets.dart';
 import 'package:skye_app/features/notifications/notifications_screen.dart';
 import 'package:skye_app/shared/models/aircraft_model.dart';
+import 'package:skye_app/shared/models/location_models.dart';
 import 'package:skye_app/shared/services/aircraft_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
@@ -39,6 +40,8 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
   String? _locationState;
   String? _locationCity;
   String? _locationAirport;
+  StateModel? _filterStateModel;
+  CityModel? _filterCityModel;
   double? _minPrice;
   double? _maxPrice;
   String? _sort; // 'price_asc' | 'price_desc'
@@ -68,6 +71,14 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
   }
 
   void _openRentBuySheet() {
+    if (_type != null) {
+      debugPrint('✅ [AircraftListingScreen] Rent/Buy chip tapped while selected -> clear filter');
+      setState(() {
+        _type = null;
+        _loadAircrafts();
+      });
+      return;
+    }
     showRentBuySheet(
       context,
       currentType: _type,
@@ -81,6 +92,14 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
   }
 
   void _openAircraftTypeSheet() {
+    if (_aircraftTypeId != null) {
+      debugPrint('✅ [AircraftListingScreen] Aircraft Type chip tapped while selected -> clear filter');
+      setState(() {
+        _aircraftTypeId = null;
+        _loadAircrafts();
+      });
+      return;
+    }
     showAircraftTypeSheet(
       context,
       currentId: _aircraftTypeId,
@@ -94,12 +113,27 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
   }
 
   void _openStateSheet() {
+    if (_locationState != null && _locationState!.isNotEmpty) {
+      debugPrint('✅ [AircraftListingScreen] State chip tapped while selected -> clear filter');
+      setState(() {
+        _locationState = null;
+        _filterStateModel = null;
+        _locationCity = null;
+        _filterCityModel = null;
+        _loadAircrafts();
+      });
+      return;
+    }
     showStateSheet(
       context,
       currentValue: _locationState,
-      onApply: (v) {
+      selectedState: _filterStateModel,
+      onApply: (v, model) {
         setState(() {
           _locationState = v;
+          _filterStateModel = model;
+          _locationCity = null;
+          _filterCityModel = null;
           _loadAircrafts();
         });
       },
@@ -107,12 +141,24 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
   }
 
   void _openCitySheet() {
+    if (_locationCity != null && _locationCity!.isNotEmpty) {
+      debugPrint('✅ [AircraftListingScreen] City chip tapped while selected -> clear filter');
+      setState(() {
+        _locationCity = null;
+        _filterCityModel = null;
+        _loadAircrafts();
+      });
+      return;
+    }
     showCitySheet(
       context,
+      stateId: _filterStateModel?.id,
       currentValue: _locationCity,
-      onApply: (v) {
+      selectedCity: _filterCityModel,
+      onApply: (v, model) {
         setState(() {
           _locationCity = v;
+          _filterCityModel = model;
           _loadAircrafts();
         });
       },
@@ -120,9 +166,18 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
   }
 
   void _openAirportSheet() {
+    if (_locationAirport != null && _locationAirport!.isNotEmpty) {
+      debugPrint('✅ [AircraftListingScreen] Airport chip tapped while selected -> clear filter');
+      setState(() {
+        _locationAirport = null;
+        _loadAircrafts();
+      });
+      return;
+    }
     showAirportSheet(
       context,
       currentValue: _locationAirport,
+      cityId: _filterCityModel?.id,
       onApply: (v) {
         setState(() {
           _locationAirport = v;
@@ -133,6 +188,16 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
   }
 
   void _openPriceSheet() {
+    if (_minPrice != null || _maxPrice != null || _sort != null) {
+      debugPrint('✅ [AircraftListingScreen] Price chip tapped while selected -> clear filter');
+      setState(() {
+        _minPrice = null;
+        _maxPrice = null;
+        _sort = null;
+        _loadAircrafts();
+      });
+      return;
+    }
     showPriceSheet(
       context,
       minPrice: _minPrice,
@@ -220,7 +285,6 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
           Column(
             children: [
               CommonHeader(
-                locationText: '1 World Wy...',
                 onNotificationTap: () {
                   DebugLogger.log(
                     'AircraftListingScreen',

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart' hide FilterChip;
 import 'package:skye_app/app/shell/tab_shell.dart';
 import 'package:skye_app/features/cfi/cfi_detail_screen.dart';
+import 'package:skye_app/features/cfi/cfi_form_data_holder.dart';
 import 'package:skye_app/features/cfi/create_cfi_profile_screen.dart';
 import 'package:skye_app/features/cfi/cfi_post_screen.dart';
+import 'package:skye_app/features/cfi/widgets/cfi_filter_sheets.dart';
 import 'package:skye_app/features/notifications/notifications_screen.dart';
+import 'package:skye_app/shared/models/location_models.dart';
 import 'package:skye_app/shared/models/pilot_model.dart';
 import 'package:skye_app/shared/models/user_type.dart';
 import 'package:skye_app/shared/services/pilot_api_service.dart';
@@ -30,6 +33,159 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
   bool _isLoadingPilots = true;
   String? _pilotError;
 
+  String? _aircraftType;
+  String? _state;
+  String? _city;
+  String? _airport;
+  StateModel? _filterStateModel;
+  CityModel? _filterCityModel;
+  DateTime? _date;
+  bool? _aircraftOwnership;
+
+  List<PilotModel> get _filteredPilots {
+    var list = _pilots;
+    if (_aircraftType != null && _aircraftType!.trim().isNotEmpty) {
+      final term = _aircraftType!.trim().toLowerCase();
+      list = list.where((p) {
+        return p.pilotProfile?.aircraftExperiences
+                .any((e) => e.aircraftType.toLowerCase().contains(term)) ??
+            false;
+      }).toList();
+    }
+    if (_state != null && _state!.trim().isNotEmpty) {
+      final term = _state!.trim().toLowerCase();
+      list = list.where((p) {
+        return p.pilotProfile?.location?.toLowerCase().contains(term) ?? false;
+      }).toList();
+    }
+    if (_city != null && _city!.trim().isNotEmpty) {
+      final term = _city!.trim().toLowerCase();
+      list = list.where((p) {
+        return p.pilotProfile?.location?.toLowerCase().contains(term) ?? false;
+      }).toList();
+    }
+    if (_airport != null && _airport!.trim().isNotEmpty) {
+      final term = _airport!.trim().toLowerCase();
+      list = list.where((p) {
+        return p.pilotProfile?.location?.toLowerCase().contains(term) ?? false;
+      }).toList();
+    }
+    if (_aircraftOwnership != null) {
+      list = list.where((p) {
+        return p.pilotProfile?.aircraftExperiences
+                .any((e) => e.ownsAircraft == _aircraftOwnership) ??
+            false;
+      }).toList();
+    }
+    return list;
+  }
+
+  void _openAircraftTypeSheet() {
+    if (_aircraftType != null && _aircraftType!.isNotEmpty) {
+      debugPrint('✅ [CfiListingScreen] Aircraft Type chip tapped while selected -> clear filter');
+      setState(() => _aircraftType = null);
+      return;
+    }
+    showCfiAircraftTypeSheet(
+      context,
+      currentValue: _aircraftType,
+      onApply: (v) => setState(() {
+        _aircraftType = v;
+      }),
+    );
+  }
+
+  void _openStateSheet() {
+    if (_state != null && _state!.isNotEmpty) {
+      debugPrint('✅ [CfiListingScreen] State chip tapped while selected -> clear filter');
+      setState(() {
+        _state = null;
+        _filterStateModel = null;
+        _city = null;
+        _filterCityModel = null;
+      });
+      return;
+    }
+    showCfiStateSheet(
+      context,
+      currentValue: _state,
+      selectedState: _filterStateModel,
+      onApply: (v, model) => setState(() {
+        _state = v;
+        _filterStateModel = model;
+        _city = null;
+        _filterCityModel = null;
+      }),
+    );
+  }
+
+  void _openCitySheet() {
+    if (_city != null && _city!.isNotEmpty) {
+      debugPrint('✅ [CfiListingScreen] City chip tapped while selected -> clear filter');
+      setState(() {
+        _city = null;
+        _filterCityModel = null;
+      });
+      return;
+    }
+    showCfiCitySheet(
+      context,
+      stateId: _filterStateModel?.id,
+      currentValue: _city,
+      selectedCity: _filterCityModel,
+      onApply: (v, model) => setState(() {
+        _city = v;
+        _filterCityModel = model;
+      }),
+    );
+  }
+
+  void _openAirportSheet() {
+    if (_airport != null && _airport!.isNotEmpty) {
+      debugPrint('✅ [CfiListingScreen] Airport chip tapped while selected -> clear filter');
+      setState(() => _airport = null);
+      return;
+    }
+    showCfiAirportSheet(
+      context,
+      currentValue: _airport,
+      cityId: _filterCityModel?.id,
+      onApply: (v) => setState(() {
+        _airport = v;
+      }),
+    );
+  }
+
+  void _openDateSheet() {
+    if (_date != null) {
+      debugPrint('✅ [CfiListingScreen] Date chip tapped while selected -> clear filter');
+      setState(() => _date = null);
+      return;
+    }
+    showCfiDateSheet(
+      context,
+      currentValue: _date,
+      onApply: (v) => setState(() {
+        _date = v;
+      }),
+    );
+  }
+
+  void _openAircraftOwnershipSheet() {
+    if (_aircraftOwnership != null) {
+      debugPrint('✅ [CfiListingScreen] Aircraft Ownership chip tapped while selected -> clear filter');
+      setState(() => _aircraftOwnership = null);
+      return;
+    }
+    showCfiAircraftOwnershipSheet(
+      context,
+      currentValue: _aircraftOwnership,
+      onApply: (v) => setState(() {
+        _aircraftOwnership = v;
+      }),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -43,13 +199,15 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
     });
 
     try {
-      // Load instructors (pilots with instructor_ratings)
+      // GET /api/pilots - onaylanan CFI pilotları (pilot_type=pilot, status=approved)
       final response = await PilotApiService.instance.getPilots(
         page: 1,
-        perPage: 50, // Load more for listing screen
+        perPage: 50,
+        pilotType: 'pilot',
+        status: 'approved',
       );
       if (mounted) {
-        // Filter to only show instructors (pilots with instructor_ratings)
+        // Fallback client-side filter: sadece instructor_ratings olanları göster
         final instructors = response.data.where((pilot) => pilot.isInstructor).toList();
         setState(() {
           _pilots = instructors;
@@ -80,7 +238,6 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
           Column(
             children: [
               CommonHeader(
-                locationText: '1 World Wy...',
                 onNotificationTap: () {
                   DebugLogger.log(
                     'CfiListingScreen',
@@ -145,7 +302,7 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
 
           const SizedBox(height: 16),
 
-          // Filter chips
+          // Filter chips - Aircraft Type, State, City, Airport, Date, Aircraft Ownership
           SizedBox(
             height: 40,
             child: ListView(
@@ -153,69 +310,45 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
                 FilterChip(
-                  label: 'Aircraft Brand',
-                  icon: Icons.flight,
-                  isSelected: true,
-                  onTap: () {
-                    DebugLogger.log('CfiListingScreen', 'filter tapped', {
-                      'filter': 'Aircraft Brand',
-                    });
-                  },
-                ),
-                const SizedBox(width: 7),
-                FilterChip(
                   label: 'Aircraft Type',
                   icon: Icons.airplanemode_active,
-                  isSelected: true,
-                  onTap: () {
-                    DebugLogger.log('CfiListingScreen', 'filter tapped', {
-                      'filter': 'Aircraft Type',
-                    });
-                  },
+                  isSelected: _aircraftType != null && _aircraftType!.isNotEmpty,
+                  onTap: _openAircraftTypeSheet,
                 ),
                 const SizedBox(width: 7),
                 FilterChip(
                   label: 'State',
                   icon: Icons.public,
-                  isSelected: false,
-                  onTap: () {
-                    DebugLogger.log('CfiListingScreen', 'filter tapped', {
-                      'filter': 'State',
-                    });
-                  },
+                  isSelected: _state != null && _state!.isNotEmpty,
+                  onTap: _openStateSheet,
                 ),
                 const SizedBox(width: 7),
                 FilterChip(
                   label: 'City',
                   icon: Icons.location_city,
-                  isSelected: false,
-                  onTap: () {
-                    DebugLogger.log('CfiListingScreen', 'filter tapped', {
-                      'filter': 'City',
-                    });
-                  },
+                  isSelected: _city != null && _city!.isNotEmpty,
+                  onTap: _openCitySheet,
                 ),
                 const SizedBox(width: 7),
                 FilterChip(
                   label: 'Airport',
                   icon: Icons.flight_takeoff,
-                  isSelected: false,
-                  onTap: () {
-                    DebugLogger.log('CfiListingScreen', 'filter tapped', {
-                      'filter': 'Airport',
-                    });
-                  },
+                  isSelected: _airport != null && _airport!.isNotEmpty,
+                  onTap: _openAirportSheet,
                 ),
                 const SizedBox(width: 7),
                 FilterChip(
                   label: 'Date',
                   icon: Icons.calendar_today,
-                  isSelected: false,
-                  onTap: () {
-                    DebugLogger.log('CfiListingScreen', 'filter tapped', {
-                      'filter': 'Date',
-                    });
-                  },
+                  isSelected: _date != null,
+                  onTap: _openDateSheet,
+                ),
+                const SizedBox(width: 7),
+                FilterChip(
+                  label: 'Aircraft Ownership',
+                  icon: Icons.public,
+                  isSelected: _aircraftOwnership != null,
+                  onTap: _openAircraftOwnershipSheet,
                 ),
               ],
             ),
@@ -272,11 +405,13 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
                           ],
                         ),
                       )
-                    : _pilots.isEmpty
-                        ? const Center(
+                        : _filteredPilots.isEmpty
+                        ? Center(
                             child: Text(
-                              'No instructors available',
-                              style: TextStyle(color: AppColors.textGray),
+                              _pilots.isEmpty
+                                  ? 'No instructors available'
+                                  : 'No instructors match your filters',
+                              style: const TextStyle(color: AppColors.textGray),
                             ),
                           )
                         : ListView.builder(
@@ -287,9 +422,9 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
                                   MediaQuery.of(context).viewPadding.bottom +
                                   16,
                             ),
-                            itemCount: _pilots.length,
+                            itemCount: _filteredPilots.length,
                             itemBuilder: (context, index) {
-                              final pilot = _pilots[index];
+                              final pilot = _filteredPilots[index];
                               DebugLogger.log(
                                 'CfiListingScreen',
                                 'build card',
@@ -301,7 +436,7 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
                                 onTap: () {
                                   Navigator.of(context).pushNamed(
                                     CfiDetailScreen.routeName,
-                                    arguments: {'pilotId': pilot.id},
+                                    arguments: {'pilot': pilot},
                                   );
                                 },
                               );
@@ -334,6 +469,7 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
                         'CfiListingScreen',
                         'Post FAB tapped -> CreateCfiProfileScreen',
                       );
+                      CfiFormDataHolder.clear();
                       Navigator.of(context).pushNamed(
                         CreateCfiProfileScreen.routeName,
                       );

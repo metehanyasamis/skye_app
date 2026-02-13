@@ -11,10 +11,16 @@ class ProgressIndicator extends StatefulWidget {
     super.key,
     required this.currentStep,
     required this.totalSteps,
+    this.activeColor,
+    this.inactiveColor,
   });
 
   final int currentStep;
   final int totalSteps;
+  /// Override color for completed/current steps
+  final Color? activeColor;
+  /// Override color for pending steps
+  final Color? inactiveColor;
 
   @override
   State<ProgressIndicator> createState() => _ProgressIndicatorState();
@@ -65,6 +71,7 @@ class _ProgressIndicatorState extends State<ProgressIndicator>
     });
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: List.generate(widget.totalSteps, (index) {
         final stepNumber = index + 1;
         final isActive = stepNumber <= widget.currentStep;
@@ -76,18 +83,15 @@ class _ProgressIndicatorState extends State<ProgressIndicator>
               animation: _animation,
               builder: (context, child) {
                 // Animate color transition
+                final active = widget.activeColor ?? AppColors.navy800;
+                final inactive = widget.inactiveColor ?? AppColors.borderLight;
                 Color circleColor;
                 if (isActive && !wasActive) {
-                  // Newly activated - animate from light to dark
-                  circleColor = Color.lerp(
-                    AppColors.borderLight,
-                    AppColors.navy800,
-                    _animation.value,
-                  )!;
+                  circleColor = Color.lerp(inactive, active, _animation.value)!;
                 } else if (isActive) {
-                  circleColor = AppColors.navy800;
+                  circleColor = active;
                 } else {
-                  circleColor = AppColors.borderLight;
+                  circleColor = inactive;
                 }
 
                 return Container(
@@ -108,18 +112,15 @@ class _ProgressIndicatorState extends State<ProgressIndicator>
                   final lineIsActive = stepNumber < widget.currentStep;
                   final lineWasActive = stepNumber < _previousStep;
                   
+                  final active = widget.activeColor ?? AppColors.navy800;
+                  final inactive = widget.inactiveColor ?? AppColors.borderLight;
                   Color lineColor;
                   if (lineIsActive && !lineWasActive) {
-                    // Newly activated - animate from light to dark
-                    lineColor = Color.lerp(
-                      AppColors.borderLight,
-                      AppColors.navy800,
-                      _animation.value,
-                    )!;
+                    lineColor = Color.lerp(inactive, active, _animation.value)!;
                   } else if (lineIsActive) {
-                    lineColor = AppColors.navy800;
+                    lineColor = active;
                   } else {
-                    lineColor = AppColors.borderLight;
+                    lineColor = inactive;
                   }
 
                   return Container(

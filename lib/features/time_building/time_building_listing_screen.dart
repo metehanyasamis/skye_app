@@ -2,8 +2,14 @@ import 'package:flutter/material.dart' hide FilterChip;
 import 'package:skye_app/app/shell/tab_shell.dart';
 import 'package:skye_app/features/notifications/notifications_screen.dart';
 import 'package:skye_app/features/safety_pilot/create_safety_pilot_profile_screen.dart';
+import 'package:skye_app/features/safety_pilot/safety_pilot_detail_screen.dart';
 import 'package:skye_app/features/time_building/time_building_post_screen.dart';
+import 'package:skye_app/features/aircraft/widgets/aircraft_filter_sheets.dart';
+import 'package:skye_app/features/cfi/widgets/cfi_filter_sheets.dart';
+import 'package:skye_app/shared/models/location_models.dart';
+import 'package:skye_app/shared/models/pilot_model.dart';
 import 'package:skye_app/shared/models/user_type.dart';
+import 'package:skye_app/shared/services/pilot_api_service.dart';
 import 'package:skye_app/shared/services/user_type_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
@@ -13,10 +19,103 @@ import 'package:skye_app/shared/widgets/filter_chip.dart';
 import 'package:skye_app/shared/widgets/post_fab.dart';
 import 'package:skye_app/shared/widgets/safety_pilot_card.dart';
 
-class TimeBuildingListingScreen extends StatelessWidget {
+class TimeBuildingListingScreen extends StatefulWidget {
   const TimeBuildingListingScreen({super.key});
 
   static const routeName = '/time-building/listing';
+
+  @override
+  State<TimeBuildingListingScreen> createState() =>
+      _TimeBuildingListingScreenState();
+}
+
+class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
+  List<PilotModel> _safetyPilots = [];
+  bool _isLoadingPilots = true;
+  String? _pilotError;
+
+  String? _aircraftType;
+  String? _locationState;
+  String? _locationCity;
+  String? _locationAirport;
+  StateModel? _filterStateModel;
+  CityModel? _filterCityModel;
+  double? _minPrice;
+  double? _maxPrice;
+  String? _sort;
+
+  List<PilotModel> get _filteredPilots {
+    var list = _safetyPilots;
+    if (_aircraftType != null && _aircraftType!.trim().isNotEmpty) {
+      final term = _aircraftType!.trim().toLowerCase();
+      list = list.where((p) {
+        return p.pilotProfile?.aircraftExperiences
+                .any((e) => e.aircraftType.toLowerCase().contains(term)) ??
+            false;
+      }).toList();
+    }
+    if (_locationState != null && _locationState!.trim().isNotEmpty) {
+      final term = _locationState!.trim().toLowerCase();
+      list = list.where((p) => p.pilotProfile?.location?.toLowerCase().contains(term) ?? false).toList();
+    }
+    if (_locationCity != null && _locationCity!.trim().isNotEmpty) {
+      final term = _locationCity!.trim().toLowerCase();
+      list = list.where((p) => p.pilotProfile?.location?.toLowerCase().contains(term) ?? false).toList();
+    }
+    if (_locationAirport != null && _locationAirport!.trim().isNotEmpty) {
+      final term = _locationAirport!.trim().toLowerCase();
+      list = list.where((p) => p.pilotProfile?.location?.toLowerCase().contains(term) ?? false).toList();
+    }
+    if (_minPrice != null || _maxPrice != null) {
+      list = list.where((p) {
+        final rate = p.pilotProfile?.hourlyRate;
+        if (rate == null) return _minPrice == null;
+        if (_minPrice != null && rate < _minPrice!) return false;
+        if (_maxPrice != null && rate > _maxPrice!) return false;
+        return true;
+      }).toList();
+    }
+    return list;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSafetyPilots();
+  }
+
+  Future<void> _loadSafetyPilots() async {
+    setState(() {
+      _isLoadingPilots = true;
+      _pilotError = null;
+    });
+
+    try {
+      // GET /api/pilots – pilot_type=safety_pilot, status=approved
+      final response = await PilotApiService.instance.getPilots(
+        page: 1,
+        perPage: 50,
+        pilotType: 'safety_pilot',
+        status: 'approved',
+      );
+      if (mounted) {
+        setState(() {
+          _safetyPilots = response.data;
+          _isLoadingPilots = false;
+        });
+        debugPrint('✅ [TimeBuildingListingScreen] Loaded ${_safetyPilots.length} safety pilots');
+      }
+    } catch (e) {
+      debugPrint('❌ [TimeBuildingListingScreen] Failed to load safety pilots: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingPilots = false;
+          _pilotError = 'Failed to load safety pilots';
+          _safetyPilots = [];
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +128,6 @@ class TimeBuildingListingScreen extends StatelessWidget {
           Column(
             children: [
               CommonHeader(
-                locationText: '1 World Wy...',
                 showNotificationDot: true,
                 onNotificationTap: () {
                   DebugLogger.log(
@@ -100,40 +198,19 @@ class TimeBuildingListingScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
                     FilterChip(
-                      label: 'Rent/Buy',
-                      icon: Icons.shopping_cart,
-                      isSelected: true,
-                      onTap: () {
-                        DebugLogger.log(
-                          'TimeBuildingListingScreen',
-                          'filter tapped',
-                          {'filter': 'Rent/Buy'},
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 7),
-                    FilterChip(
-                      label: 'Aircraft Brand',
-                      icon: Icons.flight,
-                      isSelected: false,
-                      onTap: () {
-                        DebugLogger.log(
-                          'TimeBuildingListingScreen',
-                          'filter tapped',
-                          {'filter': 'Aircraft Brand'},
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 7),
-                    FilterChip(
                       label: 'Aircraft Type',
-                      icon: Icons.flight_takeoff,
-                      isSelected: false,
+                      icon: Icons.airplanemode_active,
+                      isSelected: _aircraftType != null && _aircraftType!.isNotEmpty,
                       onTap: () {
-                        DebugLogger.log(
-                          'TimeBuildingListingScreen',
-                          'filter tapped',
-                          {'filter': 'Aircraft Type'},
+                        if (_aircraftType != null && _aircraftType!.isNotEmpty) {
+                          debugPrint('✅ [TimeBuildingListingScreen] Aircraft Type chip tapped while selected -> clear filter');
+                          setState(() => _aircraftType = null);
+                          return;
+                        }
+                        showCfiAircraftTypeSheet(
+                          context,
+                          currentValue: _aircraftType,
+                          onApply: (v) => setState(() => _aircraftType = v),
                         );
                       },
                     ),
@@ -141,12 +218,30 @@ class TimeBuildingListingScreen extends StatelessWidget {
                     FilterChip(
                       label: 'State',
                       icon: Icons.public,
-                      isSelected: false,
+                      isSelected: _locationState != null && _locationState!.isNotEmpty,
                       onTap: () {
-                        DebugLogger.log(
-                          'TimeBuildingListingScreen',
-                          'filter tapped',
-                          {'filter': 'State'},
+                        if (_locationState != null && _locationState!.isNotEmpty) {
+                          debugPrint('✅ [TimeBuildingListingScreen] State chip tapped while selected -> clear filter');
+                          setState(() {
+                            _locationState = null;
+                            _filterStateModel = null;
+                            _locationCity = null;
+                            _filterCityModel = null;
+                          });
+                          return;
+                        }
+                        showStateSheet(
+                          context,
+                          currentValue: _locationState,
+                          selectedState: _filterStateModel,
+                          onApply: (v, model) {
+                            setState(() {
+                              _locationState = v;
+                              _filterStateModel = model;
+                              _locationCity = null;
+                              _filterCityModel = null;
+                            });
+                          },
                         );
                       },
                     ),
@@ -154,12 +249,27 @@ class TimeBuildingListingScreen extends StatelessWidget {
                     FilterChip(
                       label: 'City',
                       icon: Icons.location_city,
-                      isSelected: false,
+                      isSelected: _locationCity != null && _locationCity!.isNotEmpty,
                       onTap: () {
-                        DebugLogger.log(
-                          'TimeBuildingListingScreen',
-                          'filter tapped',
-                          {'filter': 'City'},
+                        if (_locationCity != null && _locationCity!.isNotEmpty) {
+                          debugPrint('✅ [TimeBuildingListingScreen] City chip tapped while selected -> clear filter');
+                          setState(() {
+                            _locationCity = null;
+                            _filterCityModel = null;
+                          });
+                          return;
+                        }
+                        showCitySheet(
+                          context,
+                          stateId: _filterStateModel?.id,
+                          currentValue: _locationCity,
+                          selectedCity: _filterCityModel,
+                          onApply: (v, model) {
+                            setState(() {
+                              _locationCity = v;
+                              _filterCityModel = model;
+                            });
+                          },
                         );
                       },
                     ),
@@ -167,12 +277,20 @@ class TimeBuildingListingScreen extends StatelessWidget {
                     FilterChip(
                       label: 'Airport',
                       icon: Icons.flight_takeoff,
-                      isSelected: false,
+                      isSelected: _locationAirport != null && _locationAirport!.isNotEmpty,
                       onTap: () {
-                        DebugLogger.log(
-                          'TimeBuildingListingScreen',
-                          'filter tapped',
-                          {'filter': 'Airport'},
+                        if (_locationAirport != null && _locationAirport!.isNotEmpty) {
+                          debugPrint('✅ [TimeBuildingListingScreen] Airport chip tapped while selected -> clear filter');
+                          setState(() => _locationAirport = null);
+                          return;
+                        }
+                        showAirportSheet(
+                          context,
+                          currentValue: _locationAirport,
+                          cityId: _filterCityModel?.id,
+                          onApply: (v) {
+                            setState(() => _locationAirport = v);
+                          },
                         );
                       },
                     ),
@@ -180,16 +298,33 @@ class TimeBuildingListingScreen extends StatelessWidget {
                     FilterChip(
                       label: 'Price',
                       icon: Icons.attach_money,
-                      isSelected: false,
+                      isSelected: _minPrice != null || _maxPrice != null || _sort != null,
                       onTap: () {
-                        DebugLogger.log(
-                          'TimeBuildingListingScreen',
-                          'filter tapped',
-                          {'filter': 'Price'},
+                        if (_minPrice != null || _maxPrice != null || _sort != null) {
+                          debugPrint('✅ [TimeBuildingListingScreen] Price chip tapped while selected -> clear filter');
+                          setState(() {
+                            _minPrice = null;
+                            _maxPrice = null;
+                            _sort = null;
+                          });
+                          return;
+                        }
+                        showPriceSheet(
+                          context,
+                          minPrice: _minPrice,
+                          maxPrice: _maxPrice,
+                          currentSort: _sort,
+                          onApply: (min, max, sort) {
+                            setState(() {
+                              _minPrice = min;
+                              _maxPrice = max;
+                              _sort = sort;
+                            });
+                          },
                         );
                       },
                     ),
-                ],
+                  ],
               ),
             ),
               const SizedBox(height: 20),
@@ -220,29 +355,59 @@ class TimeBuildingListingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: ListView(
-                  padding: EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    bottom: 60 +
-                        MediaQuery.of(context).viewPadding.bottom +
-                        16,
-                  ),
-                  children: const [
-                    SafetyPilotCard(
-                      name: 'Logan Hawke',
-                      rating: 4.9,
-                      languages: 'EN,FR',
-                      hours: '5000+ hours dual given',
-                      instructorRatings: 'CFI, CFII',
-                      otherLicenses: 'CPL, IR',
-                      location: 'NY, USA',
-                      airport: 'FFL Airport',
-                      price: 50,
-                    ),
-                    SizedBox(height: 16),
-                  ],
-                ),
+                child: _isLoadingPilots
+                    ? const Center(child: CircularProgressIndicator())
+                    : _pilotError != null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _pilotError!,
+                                  style: const TextStyle(color: AppColors.textGray),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: _loadSafetyPilots,
+                                  child: const Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          )
+                        : _safetyPilots.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No safety pilots available',
+                                  style: const TextStyle(color: AppColors.textGray),
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: EdgeInsets.only(
+                                  left: 16,
+                                  right: 16,
+                                  bottom: 60 +
+                                      MediaQuery.of(context).viewPadding.bottom +
+                                      16,
+                                ),
+                                itemCount: _filteredPilots.length,
+                                itemBuilder: (context, index) {
+                                  final pilot = _filteredPilots[index];
+                                  return Column(
+                                    children: [
+                                      SafetyPilotCard.fromPilot(
+                                        pilot,
+                                        onTap: () {
+                                          Navigator.of(context).pushNamed(
+                                            SafetyPilotDetailScreen.routeName,
+                                            arguments: {'pilot': pilot},
+                                          );
+                                        },
+                                      ),
+                                      const SizedBox(height: 16),
+                                    ],
+                                  );
+                                },
+                              ),
               ),
             ],
           ),

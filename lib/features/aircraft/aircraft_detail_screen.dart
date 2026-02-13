@@ -143,17 +143,18 @@ class _AircraftDetailScreenState extends State<AircraftDetailScreen> {
     final wet = a.wetPrice != null ? '\$${a.wetPrice!.toStringAsFixed(0)}' : '—';
     final dry = a.dryPrice != null ? '\$${a.dryPrice!.toStringAsFixed(0)}' : '—';
 
-    final topPadding = MediaQuery.of(context).padding.top;
-
     return Scaffold(
       backgroundColor: AppColors.cfiBackground,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(20, topPadding + 12, 20, 12),
-              child: Row(
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
@@ -214,6 +215,7 @@ class _AircraftDetailScreenState extends State<AircraftDetailScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }

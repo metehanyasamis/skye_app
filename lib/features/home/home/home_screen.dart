@@ -161,7 +161,6 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Top header - using CommonHeader widget
           CommonHeader(
-            locationText: '1 World Wyndam...',
             showNotificationDot: true,
             onNotificationTap: () {
               DebugLogger.log('HomeScreen', 'notification tapped');

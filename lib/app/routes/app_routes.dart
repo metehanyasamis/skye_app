@@ -21,6 +21,7 @@ import 'package:skye_app/features/auth/auth/sign_up/personal_information_screen.
 import 'package:skye_app/features/auth/auth/sign_up/usage_details_screen.dart';
 import 'package:skye_app/features/profile/profile_screen.dart';
 import 'package:skye_app/features/safety_pilot/create_safety_pilot_profile_screen.dart';
+import 'package:skye_app/features/safety_pilot/safety_pilot_detail_screen.dart';
 import 'package:skye_app/features/safety_pilot/safety_pilot_experiences_screen.dart';
 import 'package:skye_app/features/safety_pilot/safety_pilot_in_review_screen.dart';
 import 'package:skye_app/features/safety_pilot/safety_pilot_informations_screen.dart';
@@ -29,6 +30,12 @@ import 'package:skye_app/features/auth/auth/welcome_screen.dart';
 import 'package:skye_app/features/time_building/time_building_post_screen.dart';
 import 'package:skye_app/features/home/video_player_screen.dart';
 import 'package:skye_app/features/blog/blog_webview_screen.dart';
+import 'package:skye_app/features/map/map_picker_screen.dart';
+import 'package:skye_app/features/profile/about_app_screen.dart';
+import 'package:skye_app/features/profile/edit_profile_screen.dart';
+import 'package:skye_app/features/profile/favorites_screen.dart';
+import 'package:skye_app/features/profile/help_support_screen.dart';
+import 'package:skye_app/features/profile/html_content_screen.dart';
 
 /// Merkezi route yönetimi.
 /// Tüm route isimleri ve builder'lar tek yerden yönetilir.
@@ -69,9 +76,20 @@ abstract final class AppRoutes {
   static const String safetyPilotInformations = '/safety-pilot/informations';
   static const String safetyPilotExperiences = '/safety-pilot/experiences';
   static const String safetyPilotInReview = '/safety-pilot/in-review';
+  static const String safetyPilotDetail = '/safety-pilot/detail';
 
   // ─── Time Building ────────────────────────────────────────────────────────
   static const String timeBuildingPost = '/time-building/post';
+
+  // ─── Map ───────────────────────────────────────────────────────────────────
+  static const String mapPicker = '/map-picker';
+
+  // ─── Profile ───────────────────────────────────────────────────────────────
+  static const String editProfile = '/profile/edit';
+  static const String favorites = '/profile/favorites';
+  static const String htmlContent = '/profile/html-content';
+  static const String helpSupport = '/profile/help-support';
+  static const String aboutApp = '/profile/about-app';
 
   // ─── Other ────────────────────────────────────────────────────────────────
   static const String notifications = '/notifications';
@@ -114,9 +132,22 @@ abstract final class AppRoutes {
         AppRoutes.safetyPilotInformations: (_) => const SafetyPilotInformationsScreen(),
         AppRoutes.safetyPilotExperiences: (_) => const SafetyPilotExperiencesScreen(),
         AppRoutes.safetyPilotInReview: (_) => const SafetyPilotInReviewScreen(),
+        AppRoutes.safetyPilotDetail: (_) => const SafetyPilotDetailScreen(),
         AppRoutes.timeBuildingPost: (_) => const TimeBuildingPostScreen(),
         AppRoutes.notifications: (_) => const NotificationsScreen(),
         AppRoutes.videoPlayer: (_) => const VideoPlayerScreen(),
         AppRoutes.blogWebView: (_) => const BlogWebViewScreen(),
+        AppRoutes.mapPicker: (ctx) {
+          final args = ModalRoute.of(ctx)?.settings.arguments as Map<String, dynamic>?;
+          return MapPickerScreen(
+            initialLat: (args?['lat'] as num?)?.toDouble(),
+            initialLng: (args?['lng'] as num?)?.toDouble(),
+          );
+        },
+        AppRoutes.editProfile: (_) => const EditProfileScreen(),
+        AppRoutes.favorites: (_) => const FavoritesScreen(),
+        AppRoutes.htmlContent: (_) => const HtmlContentScreen(),
+        AppRoutes.helpSupport: (_) => const HelpSupportScreen(),
+        AppRoutes.aboutApp: (_) => const AboutAppScreen(),
       };
 }

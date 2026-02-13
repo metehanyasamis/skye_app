@@ -407,6 +407,7 @@ class AuthApiService {
     required String password,
     required String passwordConfirmation,
     required String gender,
+    String? dateOfBirth,
     String? howPlanToUseSkye,
     String? aviationPositionDefinition,
     String? howSkyeCanHelp,
@@ -422,6 +423,7 @@ class AuthApiService {
         'password': password,
         'password_confirmation': passwordConfirmation,
         'gender': gender,
+        if (dateOfBirth != null && dateOfBirth.isNotEmpty) 'date_of_birth': dateOfBirth,
         if (howPlanToUseSkye != null) 'how_plan_to_use_skye': howPlanToUseSkye,
         if (aviationPositionDefinition != null) 'aviation_position_definition': aviationPositionDefinition,
         if (howSkyeCanHelp != null) 'how_skye_can_help': howSkyeCanHelp,
@@ -514,10 +516,58 @@ class AuthApiService {
     }
   }
 
+  /// Update user profile (name, email, phone, date_of_birth)
+  /// Backend: PUT /api/auth/profile 404 -> fallback PUT /api/user, PATCH /api/user
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    try {
+      debugPrint('✏️ [AuthApiService] updateProfile');
+      final endpoints = ['/auth/profile', '/user'];
+      DioException? lastError;
+      for (final path in endpoints) {
+        try {
+          await ApiService.instance.dio.put(path, data: data);
+          debugPrint('✅ [AuthApiService] updateProfile success via $path');
+          return;
+        } on DioException catch (e) {
+          if (e.response?.statusCode == 404) {
+            debugPrint('⚠️ [AuthApiService] $path not found, trying next');
+            lastError = e;
+            continue;
+          }
+          rethrow;
+        }
+      }
+      if (lastError != null) throw lastError!;
+    } on DioException catch (e) {
+      debugPrint('❌ [AuthApiService] updateProfile error: ${e.message}');
+      throw ApiError.fromDioError(e);
+    }
+  }
+
+  /// Update password
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String newPasswordConfirmation,
+  }) async {
+    try {
+      debugPrint('🔐 [AuthApiService] updatePassword');
+      await ApiService.instance.dio.put('/auth/password', data: {
+        'current_password': currentPassword,
+        'password': newPassword,
+        'password_confirmation': newPasswordConfirmation,
+      });
+      debugPrint('✅ [AuthApiService] updatePassword success');
+    } on DioException catch (e) {
+      debugPrint('❌ [AuthApiService] updatePassword error: ${e.message}');
+      throw ApiError.fromDioError(e);
+    }
+  }
+
   /// Get the authenticated user's profile
   /// 
   /// Endpoint: GET /api/auth/me
-  /// Response: { "data": { "id": 1, "name": "...", ... } }
+  /// Response: { "data": { "id": 1, "name": "...", ... } } or { "data": { "user": {...} } }
   Future<Map<String, dynamic>> getMe() async {
     try {
       debugPrint('👤 [AuthApiService] getMe');
@@ -526,8 +576,19 @@ class AuthApiService {
       
       debugPrint('✅ [AuthApiService] getMe success: ${response.data}');
       
-      final data = response.data as Map<String, dynamic>;
-      return data['data'] as Map<String, dynamic>? ?? {};
+      final data = response.data as Map<String, dynamic>?;
+      if (data == null) return {};
+      Map<String, dynamic>? inner = data['data'] as Map<String, dynamic>? ?? data;
+      while (inner != null && inner.containsKey('data')) {
+        inner = inner['data'] as Map<String, dynamic>?;
+      }
+      if (inner == null) return {};
+      if (inner.containsKey('user')) {
+        final u = inner['user'];
+        if (u is Map<String, dynamic>) return u;
+      }
+      debugPrint('👤 [AuthApiService] getMe user keys: ${inner.keys.toList()}, name=${inner["name"]}, first_name=${inner["first_name"]}');
+      return inner;
     } on DioException catch (e) {
       debugPrint('❌ [AuthApiService] getMe error: ${e.message}');
       throw ApiError.fromDioError(e);

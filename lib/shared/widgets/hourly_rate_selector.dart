@@ -5,16 +5,18 @@ import 'package:skye_app/shared/utils/debug_logger.dart';
 /// Reusable hourly rate selector widget
 /// Allows selection of hourly rate (0-1000 range)
 /// Circle stays fixed in center, numbers scroll through it
-/// Center number is larger and animated
+/// Center number is larger. Slider below for quick adjustment.
 class HourlyRateSelector extends StatefulWidget {
   const HourlyRateSelector({
     super.key,
     required this.selectedRate,
     required this.onRateSelected,
+    this.showSlider = true,
   });
 
   final int selectedRate;
   final ValueChanged<int> onRateSelected;
+  final bool showSlider;
 
   @override
   State<HourlyRateSelector> createState() => _HourlyRateSelectorState();
@@ -137,9 +139,12 @@ class _HourlyRateSelectorState extends State<HourlyRateSelector>
         // Add padding to allow first and last items to be centered
         final padding = centerPosition;
 
-        return SizedBox(
-          height: 44,
-          child: Stack(
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 44,
+              child: Stack(
             children: [
               // Fixed circle in center
               Positioned(
@@ -204,7 +209,86 @@ class _HourlyRateSelectorState extends State<HourlyRateSelector>
           ),
         ],
       ),
-    );
+    ),
+            if (widget.showSlider) ...[
+              const SizedBox(height: 12),
+              // Quick step buttons + slider
+              Row(
+                children: [
+                  // -50 button
+                  IconButton(
+                    onPressed: () {
+                      final rate = (_currentRate - 50).clamp(minRate, maxRate);
+                      setState(() => _currentRate = rate);
+                      _scrollToRate(rate);
+                      widget.onRateSelected(rate);
+                    },
+                    icon: const Icon(Icons.remove_circle_outline),
+                    color: AppColors.selectedBlue,
+                    iconSize: 28,
+                  ),
+                  // -10 button
+                  IconButton(
+                    onPressed: () {
+                      final rate = (_currentRate - 10).clamp(minRate, maxRate);
+                      setState(() => _currentRate = rate);
+                      _scrollToRate(rate);
+                      widget.onRateSelected(rate);
+                    },
+                    icon: const Icon(Icons.remove),
+                    color: AppColors.selectedBlue,
+                  ),
+                  Expanded(
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: AppColors.selectedBlue,
+                        inactiveTrackColor: AppColors.borderLight,
+                        thumbColor: AppColors.selectedBlue,
+                        overlayColor: AppColors.selectedBlue.withValues(alpha: 0.2),
+                        trackHeight: 6,
+                      ),
+                      child: Slider(
+                        value: _currentRate.toDouble(),
+                        min: minRate.toDouble(),
+                        max: maxRate.toDouble(),
+                        divisions: (maxRate - minRate).clamp(1, 100),
+                        onChanged: (v) {
+                          final rate = v.round();
+                          setState(() => _currentRate = rate);
+                          _scrollToRate(rate);
+                          widget.onRateSelected(rate);
+                        },
+                      ),
+                    ),
+                  ),
+                  // +10 button
+                  IconButton(
+                    onPressed: () {
+                      final rate = (_currentRate + 10).clamp(minRate, maxRate);
+                      setState(() => _currentRate = rate);
+                      _scrollToRate(rate);
+                      widget.onRateSelected(rate);
+                    },
+                    icon: const Icon(Icons.add),
+                    color: AppColors.selectedBlue,
+                  ),
+                  // +50 button
+                  IconButton(
+                    onPressed: () {
+                      final rate = (_currentRate + 50).clamp(minRate, maxRate);
+                      setState(() => _currentRate = rate);
+                      _scrollToRate(rate);
+                      widget.onRateSelected(rate);
+                    },
+                    icon: const Icon(Icons.add_circle_outline),
+                    color: AppColors.selectedBlue,
+                    iconSize: 28,
+                  ),
+                ],
+              ),
+            ],
+          ],
+        );
       },
     );
   }
