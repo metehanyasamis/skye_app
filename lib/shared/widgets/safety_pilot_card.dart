@@ -5,6 +5,7 @@ import 'package:skye_app/shared/models/pilot_model.dart';
 import 'package:skye_app/shared/services/api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
+import 'package:skye_app/shared/widgets/favorite_button.dart';
 
 /// Safety pilot listing kartı – time building ekranında kullanılır.
 class SafetyPilotCard extends StatelessWidget {
@@ -21,17 +22,23 @@ class SafetyPilotCard extends StatelessWidget {
     required this.price,
     this.pilot,
     this.onTap,
+    this.isFavorited = false,
+    this.onFavoriteTap,
   });
 
   /// PilotModel ile oluştur – API’den gelen veri için.
   factory SafetyPilotCard.fromPilot(
     PilotModel pilot, {
     VoidCallback? onTap,
+    bool isFavorited = false,
+    VoidCallback? onFavoriteTap,
   }) {
     final p = pilot.pilotProfile;
     return SafetyPilotCard(
       pilot: pilot,
       onTap: onTap,
+      isFavorited: isFavorited,
+      onFavoriteTap: onFavoriteTap,
       name: pilot.displayName,
       rating: p?.rating ?? 0,
       languages: p?.languages.isNotEmpty == true
@@ -63,6 +70,8 @@ class SafetyPilotCard extends StatelessWidget {
   final int price;
   final PilotModel? pilot;
   final VoidCallback? onTap;
+  final bool isFavorited;
+  final VoidCallback? onFavoriteTap;
 
   @override
   Widget build(BuildContext context) {
@@ -249,19 +258,18 @@ class SafetyPilotCard extends StatelessWidget {
                             maxLines: 1,
                           ),
                         ),
-                        GestureDetector(
+                        FavoriteButton(
+                          isFavorited: isFavorited,
                           onTap: () {
                             DebugLogger.log(
                               'SafetyPilotCard',
                               'favorite tapped',
                               {'name': name},
                             );
+                            onFavoriteTap?.call();
                           },
-                          child: const Icon(
-                            Icons.favorite_border,
-                            size: 18,
-                            color: Color(0xFF353535),
-                          ),
+                          size: 18,
+                          color: const Color(0xFF353535),
                         ),
                       ],
                     ),

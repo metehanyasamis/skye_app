@@ -9,7 +9,9 @@ import 'package:skye_app/features/notifications/notifications_screen.dart';
 import 'package:skye_app/shared/models/location_models.dart';
 import 'package:skye_app/shared/models/pilot_model.dart';
 import 'package:skye_app/shared/models/user_type.dart';
+import 'package:skye_app/shared/services/favorites_api_service.dart';
 import 'package:skye_app/shared/services/pilot_api_service.dart';
+import 'package:skye_app/shared/services/user_address_service.dart';
 import 'package:skye_app/shared/services/user_type_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
@@ -32,6 +34,7 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
   List<PilotModel> _pilots = [];
   bool _isLoadingPilots = true;
   String? _pilotError;
+  Set<int> _favoritedPilotIds = {};
 
   String? _aircraftType;
   String? _state;
@@ -104,18 +107,22 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
         _city = null;
         _filterCityModel = null;
       });
+      _loadPilots();
       return;
     }
     showCfiStateSheet(
       context,
       currentValue: _state,
       selectedState: _filterStateModel,
-      onApply: (v, model) => setState(() {
-        _state = v;
-        _filterStateModel = model;
-        _city = null;
-        _filterCityModel = null;
-      }),
+      onApply: (v, model) {
+        setState(() {
+          _state = v;
+          _filterStateModel = model;
+          _city = null;
+          _filterCityModel = null;
+        });
+        _loadPilots();
+      },
     );
   }
 
@@ -126,6 +133,7 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
         _city = null;
         _filterCityModel = null;
       });
+      _loadPilots();
       return;
     }
     showCfiCitySheet(
@@ -133,10 +141,13 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
       stateId: _filterStateModel?.id,
       currentValue: _city,
       selectedCity: _filterCityModel,
-      onApply: (v, model) => setState(() {
-        _city = v;
-        _filterCityModel = model;
-      }),
+      onApply: (v, model) {
+        setState(() {
+          _city = v;
+          _filterCityModel = model;
+        });
+        _loadPilots();
+      },
     );
   }
 
@@ -144,15 +155,17 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
     if (_airport != null && _airport!.isNotEmpty) {
       debugPrint('✅ [CfiListingScreen] Airport chip tapped while selected -> clear filter');
       setState(() => _airport = null);
+      _loadPilots();
       return;
     }
     showCfiAirportSheet(
       context,
       currentValue: _airport,
       cityId: _filterCityModel?.id,
-      onApply: (v) => setState(() {
-        _airport = v;
-      }),
+      onApply: (v) {
+        setState(() => _airport = v);
+        _loadPilots();
+      },
     );
   }
 
@@ -198,13 +211,27 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
       _pilotError = null;
     });
 
+    // Backend location filter: filter chips or user address
+    final locationParts = [_state, _city, _airport]
+        .whereType<String>()
+        .where((s) => s.trim().isNotEmpty)
+        .map((s) => s.trim())
+        .toList();
+    final location = locationParts.isNotEmpty
+        ? locationParts.join(', ')
+        : (UserAddressService.instance.address.trim().isNotEmpty
+            ? UserAddressService.instance.address.trim()
+            : null);
+
     try {
+      debugPrint('📍 [CfiListingScreen] _loadPilots location=$location');
       // GET /api/pilots - onaylanan CFI pilotları (pilot_type=pilot, status=approved)
       final response = await PilotApiService.instance.getPilots(
         page: 1,
         perPage: 50,
         pilotType: 'pilot',
         status: 'approved',
+        location: location,
       );
       if (mounted) {
         // Fallback client-side filter: sadece instructor_ratings olanları göster
@@ -214,6 +241,7 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
           _isLoadingPilots = false;
         });
         debugPrint('✅ [CfiListingScreen] Loaded ${_pilots.length} instructors');
+        _loadFavorites();
       }
     } catch (e) {
       debugPrint('❌ [CfiListingScreen] Failed to load pilots: $e');
@@ -224,6 +252,41 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
           _pilots = [];
         });
       }
+    }
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      final resp = await FavoritesApiService.instance.getFavorites(
+        FavoritesApiService.typePilot,
+      );
+      if (mounted) {
+        setState(() => _favoritedPilotIds = resp.pilotIds);
+        debugPrint('❤️ [CfiListingScreen] Loaded ${_favoritedPilotIds.length} favorites');
+      }
+    } catch (e) {
+      debugPrint('⚠️ [CfiListingScreen] Failed to load favorites: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite(int pilotId) async {
+    try {
+      final result = await FavoritesApiService.instance.toggleFavorite(
+        FavoritesApiService.typePilot,
+        pilotId,
+      );
+      if (mounted) {
+        setState(() {
+          if (result.isFavorited) {
+            _favoritedPilotIds.add(pilotId);
+          } else {
+            _favoritedPilotIds.remove(pilotId);
+          }
+        });
+        debugPrint('❤️ [CfiListingScreen] Toggle favorite pilotId=$pilotId -> ${result.isFavorited}');
+      }
+    } catch (e) {
+      debugPrint('❌ [CfiListingScreen] Toggle favorite failed: $e');
     }
   }
 
@@ -433,10 +496,16 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
 
                               return CfiCard(
                                 pilot: pilot,
+                                isFavorited: _favoritedPilotIds.contains(pilot.id),
+                                onFavoriteTap: () => _toggleFavorite(pilot.id),
                                 onTap: () {
                                   Navigator.of(context).pushNamed(
                                     CfiDetailScreen.routeName,
-                                    arguments: {'pilot': pilot},
+                                    arguments: {
+                                      'pilot': pilot,
+                                      'isFavorited': _favoritedPilotIds.contains(pilot.id),
+                                      'pilotType': FavoritesApiService.typePilot,
+                                    },
                                   );
                                 },
                               );
@@ -452,7 +521,7 @@ class _CfiListingScreenState extends State<CfiListingScreen> {
                 return const SizedBox.shrink();
               }
               return Positioned(
-                bottom: 76,
+                bottom: 48,
                 right: 16,
                 child: PostFab(
                   onTap: () {

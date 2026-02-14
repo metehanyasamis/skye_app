@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:skye_app/shared/models/aircraft_model.dart';
 import 'package:skye_app/shared/services/aircraft_api_service.dart';
+import 'package:skye_app/shared/services/favorites_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
+import 'package:skye_app/shared/widgets/favorite_button.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
 
 class AircraftDetailScreen extends StatefulWidget {
@@ -18,12 +20,19 @@ class _AircraftDetailScreenState extends State<AircraftDetailScreen> {
   bool _loading = true;
   String? _error;
   bool _hasFetched = false;
+  bool _isFavorited = false;
 
   int? get _id {
     final a = ModalRoute.of(context)?.settings.arguments;
     if (a == null) return null;
     if (a is int) return a;
     if (a is num) return a.toInt();
+    if (a is Map && a['id'] != null) {
+      final id = a['id'];
+      if (id is int) return id;
+      if (id is num) return id.toInt();
+      return int.tryParse(id.toString());
+    }
     return null;
   }
 
@@ -32,6 +41,10 @@ class _AircraftDetailScreenState extends State<AircraftDetailScreen> {
     super.didChangeDependencies();
     if (_hasFetched) return;
     final id = _id;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['isFavorited'] == true) {
+      _isFavorited = true;
+    }
     _hasFetched = true;
     if (id == null) {
       setState(() {
@@ -68,6 +81,23 @@ class _AircraftDetailScreenState extends State<AircraftDetailScreen> {
           _error = 'Failed to load aircraft';
         });
       }
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    final id = _aircraft?.id ?? _id;
+    if (id == null) return;
+    try {
+      final result = await FavoritesApiService.instance.toggleFavorite(
+        FavoritesApiService.typeAircraft,
+        id,
+      );
+      if (mounted) {
+        setState(() => _isFavorited = result.isFavorited);
+        debugPrint('❤️ [AircraftDetailScreen] Toggle favorite aircraftId=$id -> ${result.isFavorited}');
+      }
+    } catch (e) {
+      debugPrint('❌ [AircraftDetailScreen] Toggle favorite failed: $e');
     }
   }
 
@@ -165,13 +195,11 @@ class _AircraftDetailScreenState extends State<AircraftDetailScreen> {
                       minimumSize: const Size(44, 44),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.favorite_border, color: AppColors.labelBlack, size: 24),
-                    onPressed: () {},
-                    style: IconButton.styleFrom(
-                      padding: const EdgeInsets.all(8),
-                      minimumSize: const Size(44, 44),
-                    ),
+                  FavoriteButton(
+                    isFavorited: _isFavorited,
+                    onTap: _toggleFavorite,
+                    size: 24,
+                    color: AppColors.labelBlack,
                   ),
                 ],
               ),

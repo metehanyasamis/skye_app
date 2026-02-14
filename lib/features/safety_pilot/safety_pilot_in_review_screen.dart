@@ -21,13 +21,7 @@ class SafetyPilotInReviewScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.chevron_left, color: AppColors.labelBlack),
-          onPressed: () {
-            debugPrint('⬅️ [SafetyPilotInReviewScreen] back pressed');
-            Navigator.of(context).pop();
-          },
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32),

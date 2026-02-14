@@ -9,7 +9,9 @@ import 'package:skye_app/features/cfi/widgets/cfi_filter_sheets.dart';
 import 'package:skye_app/shared/models/location_models.dart';
 import 'package:skye_app/shared/models/pilot_model.dart';
 import 'package:skye_app/shared/models/user_type.dart';
+import 'package:skye_app/shared/services/favorites_api_service.dart';
 import 'package:skye_app/shared/services/pilot_api_service.dart';
+import 'package:skye_app/shared/services/user_address_service.dart';
 import 'package:skye_app/shared/services/user_type_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
@@ -33,6 +35,7 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
   List<PilotModel> _safetyPilots = [];
   bool _isLoadingPilots = true;
   String? _pilotError;
+  Set<int> _favoritedSafetyPilotIds = {};
 
   String? _aircraftType;
   String? _locationState;
@@ -90,13 +93,26 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
       _pilotError = null;
     });
 
+    final locationParts = [
+      _locationState,
+      _locationCity,
+      _locationAirport,
+    ].whereType<String>().where((s) => s.trim().isNotEmpty).map((s) => s.trim()).toList();
+    final location = locationParts.isNotEmpty
+        ? locationParts.join(', ')
+        : (UserAddressService.instance.address.trim().isNotEmpty
+            ? UserAddressService.instance.address.trim()
+            : null);
+
     try {
+      debugPrint('📍 [TimeBuildingListingScreen] _loadSafetyPilots location=$location');
       // GET /api/pilots – pilot_type=safety_pilot, status=approved
       final response = await PilotApiService.instance.getPilots(
         page: 1,
         perPage: 50,
         pilotType: 'safety_pilot',
         status: 'approved',
+        location: location,
       );
       if (mounted) {
         setState(() {
@@ -104,6 +120,7 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
           _isLoadingPilots = false;
         });
         debugPrint('✅ [TimeBuildingListingScreen] Loaded ${_safetyPilots.length} safety pilots');
+        _loadFavorites();
       }
     } catch (e) {
       debugPrint('❌ [TimeBuildingListingScreen] Failed to load safety pilots: $e');
@@ -114,6 +131,41 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
           _safetyPilots = [];
         });
       }
+    }
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      final resp = await FavoritesApiService.instance.getFavorites(
+        FavoritesApiService.typeSafetyPilot,
+      );
+      if (mounted) {
+        setState(() => _favoritedSafetyPilotIds = resp.safetyPilotIds);
+        debugPrint('❤️ [TimeBuildingListingScreen] Loaded ${_favoritedSafetyPilotIds.length} favorites');
+      }
+    } catch (e) {
+      debugPrint('⚠️ [TimeBuildingListingScreen] Failed to load favorites: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite(int pilotId) async {
+    try {
+      final result = await FavoritesApiService.instance.toggleFavorite(
+        FavoritesApiService.typeSafetyPilot,
+        pilotId,
+      );
+      if (mounted) {
+        setState(() {
+          if (result.isFavorited) {
+            _favoritedSafetyPilotIds.add(pilotId);
+          } else {
+            _favoritedSafetyPilotIds.remove(pilotId);
+          }
+        });
+        debugPrint('❤️ [TimeBuildingListingScreen] Toggle favorite pilotId=$pilotId -> ${result.isFavorited}');
+      }
+    } catch (e) {
+      debugPrint('❌ [TimeBuildingListingScreen] Toggle favorite failed: $e');
     }
   }
 
@@ -228,6 +280,7 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
                             _locationCity = null;
                             _filterCityModel = null;
                           });
+                          _loadSafetyPilots();
                           return;
                         }
                         showStateSheet(
@@ -241,6 +294,7 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
                               _locationCity = null;
                               _filterCityModel = null;
                             });
+                            _loadSafetyPilots();
                           },
                         );
                       },
@@ -257,6 +311,7 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
                             _locationCity = null;
                             _filterCityModel = null;
                           });
+                          _loadSafetyPilots();
                           return;
                         }
                         showCitySheet(
@@ -269,6 +324,7 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
                               _locationCity = v;
                               _filterCityModel = model;
                             });
+                            _loadSafetyPilots();
                           },
                         );
                       },
@@ -282,6 +338,7 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
                         if (_locationAirport != null && _locationAirport!.isNotEmpty) {
                           debugPrint('✅ [TimeBuildingListingScreen] Airport chip tapped while selected -> clear filter');
                           setState(() => _locationAirport = null);
+                          _loadSafetyPilots();
                           return;
                         }
                         showAirportSheet(
@@ -290,6 +347,7 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
                           cityId: _filterCityModel?.id,
                           onApply: (v) {
                             setState(() => _locationAirport = v);
+                            _loadSafetyPilots();
                           },
                         );
                       },
@@ -396,10 +454,16 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
                                     children: [
                                       SafetyPilotCard.fromPilot(
                                         pilot,
+                                        isFavorited: _favoritedSafetyPilotIds.contains(pilot.id),
+                                        onFavoriteTap: () => _toggleFavorite(pilot.id),
                                         onTap: () {
                                           Navigator.of(context).pushNamed(
                                             SafetyPilotDetailScreen.routeName,
-                                            arguments: {'pilot': pilot},
+                                            arguments: {
+                                              'pilot': pilot,
+                                              'isFavorited': _favoritedSafetyPilotIds.contains(pilot.id),
+                                              'pilotType': FavoritesApiService.typeSafetyPilot,
+                                            },
                                           );
                                         },
                                       ),
@@ -418,7 +482,7 @@ class _TimeBuildingListingScreenState extends State<TimeBuildingListingScreen> {
                 return const SizedBox.shrink();
               }
               return Positioned(
-                bottom: 76,
+                bottom: 48,
                 right: 16,
                 child: PostFab(
                   onTap: () {

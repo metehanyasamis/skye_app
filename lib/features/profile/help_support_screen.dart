@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:skye_app/shared/services/settings_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Help & Support - contact information from backend
@@ -60,14 +61,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    final bottom = MediaQuery.of(context).padding.bottom + 24;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.fromLTRB(16, 0, 16, bottom),
-      ),
-    );
+    ToastOverlay.show(context, message);
   }
 
   Future<void> _openEmail(String email) async {

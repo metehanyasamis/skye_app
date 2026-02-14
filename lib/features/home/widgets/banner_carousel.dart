@@ -130,17 +130,26 @@ class _BannerCarouselState extends State<BannerCarousel> {
 
     return SizedBox(
       height: 151,
-      child: PageView.builder(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        itemCount: widget.banners.length,
-        itemBuilder: (context, index) {
-          final banner = widget.banners[index];
-          return PromoCard(
-            banner: banner,
-            onTap: () => _onBannerTap(banner),
-          );
+      child: Listener(
+        onPointerDown: (_) {
+          _timer?.cancel();
+          _timer = null;
         },
+        onPointerUp: (_) => _startTimer(),
+        onPointerCancel: (_) => _startTimer(),
+        child: PageView.builder(
+          controller: _pageController,
+          physics: const PageScrollPhysics(),
+          onPageChanged: _onPageChanged,
+          itemCount: widget.banners.length,
+          itemBuilder: (context, index) {
+            final banner = widget.banners[index];
+            return PromoCard(
+              banner: banner,
+              onTap: () => _onBannerTap(banner),
+            );
+          },
+        ),
       ),
     );
   }

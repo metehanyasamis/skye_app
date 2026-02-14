@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:skye_app/features/cfi/cfi_form_data_holder.dart';
 import 'package:skye_app/features/cfi/cfi_summary_screen.dart';
 import 'package:skye_app/features/cfi/widgets/aircraft_selector_sheet.dart';
@@ -444,6 +445,7 @@ class _HoursInputFieldState extends State<_HoursInputField> {
       textAlign: TextAlign.center,
       onChanged: widget.onChanged,
       keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       style: const TextStyle(
         fontSize: 14,
         color: AppColors.labelBlack,

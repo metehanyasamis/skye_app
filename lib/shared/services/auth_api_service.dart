@@ -545,6 +545,7 @@ class AuthApiService {
   }
 
   /// Update password
+  /// Backend: PUT /api/auth/password or PUT /api/pilot/profile/password (RTF)
   Future<void> updatePassword({
     required String currentPassword,
     required String newPassword,
@@ -552,12 +553,28 @@ class AuthApiService {
   }) async {
     try {
       debugPrint('🔐 [AuthApiService] updatePassword');
-      await ApiService.instance.dio.put('/auth/password', data: {
+      final body = {
         'current_password': currentPassword,
         'password': newPassword,
         'password_confirmation': newPasswordConfirmation,
-      });
-      debugPrint('✅ [AuthApiService] updatePassword success');
+      };
+      final endpoints = ['/auth/password', '/pilot/profile/password'];
+      DioException? lastError;
+      for (final path in endpoints) {
+        try {
+          await ApiService.instance.dio.put(path, data: body);
+          debugPrint('✅ [AuthApiService] updatePassword success via $path');
+          return;
+        } on DioException catch (e) {
+          if (e.response?.statusCode == 404) {
+            debugPrint('⚠️ [AuthApiService] $path not found, trying next');
+            lastError = e;
+            continue;
+          }
+          throw ApiError.fromDioError(e);
+        }
+      }
+      if (lastError != null) throw ApiError.fromDioError(lastError!);
     } on DioException catch (e) {
       debugPrint('❌ [AuthApiService] updatePassword error: ${e.message}');
       throw ApiError.fromDioError(e);

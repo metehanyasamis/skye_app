@@ -8,6 +8,7 @@ import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/widgets/app_text_field.dart';
 import 'package:skye_app/shared/widgets/base_scaffold.dart';
 import 'package:skye_app/shared/widgets/primary_button.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 import 'package:skye_app/shared/widgets/skye_background.dart';
 import 'package:skye_app/shared/widgets/skye_logo.dart';
 
@@ -62,9 +63,7 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
     if (phone.isEmpty || verificationCode.isEmpty || firstName.isEmpty || lastName.isEmpty || email.isEmpty || password.isEmpty) {
       debugPrint('❌ [UsageDetailsScreen] missing required fields for completeRegistration');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please complete all required fields in the previous steps')),
-        );
+        ToastOverlay.show(context, 'Please complete all required fields in the previous steps');
       }
       return;
     }
@@ -110,9 +109,7 @@ class _UsageDetailsScreenState extends State<UsageDetailsScreen> {
       debugPrint('❌ [UsageDetailsScreen] completeRegistration error: $e');
       if (mounted) {
         final msg = e is ApiError ? e.message : e.toString();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration failed: $msg')),
-        );
+        ToastOverlay.show(context, 'Registration failed: $msg');
         setState(() => _isSubmitting = false);
       }
     }

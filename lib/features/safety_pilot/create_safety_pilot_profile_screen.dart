@@ -13,6 +13,7 @@ import 'package:skye_app/shared/widgets/base_form_screen.dart';
 import 'package:skye_app/shared/widgets/form_field_with_icon.dart';
 import 'package:skye_app/shared/widgets/location_permission_dialog.dart';
 import 'package:skye_app/shared/widgets/location_picker_sheets.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 import 'package:skye_app/shared/widgets/primary_button.dart';
 import 'package:skye_app/features/map/map_picker_screen.dart';
 import 'package:skye_app/shared/widgets/spoken_language_picker_sheet.dart';
@@ -231,12 +232,7 @@ class _CreateSafetyPilotProfileScreenState
 
   void _handleCitySelection() async {
     if (_selectedStateModel == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select State first'),
-          duration: Duration(milliseconds: 2500),
-        ),
-      );
+      ToastOverlay.show(context, 'Please select State first');
       return;
     }
     final picked = await showCityPickerSheet(
@@ -415,7 +411,7 @@ class _CreateSafetyPilotProfileScreenState
           label: 'Next Page',
           onPressed: _handleNextPage,
         ),
-        if (!_hasLocation) ...[
+        if (!_hasLocation && _addressController.text.trim().isEmpty) ...[
           const SizedBox(height: 24),
           Center(
             child: Column(

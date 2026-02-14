@@ -8,6 +8,7 @@ import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
 import 'package:skye_app/shared/widgets/base_form_screen.dart';
 import 'package:skye_app/shared/widgets/primary_button.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 
 class CfiSummaryScreen extends StatefulWidget {
   const CfiSummaryScreen({
@@ -311,13 +312,7 @@ class _CfiSummaryScreenState extends State<CfiSummaryScreen> {
     }
 
     if (missingFields.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill in all required fields: ${missingFields.join(', ')}'),
-          backgroundColor: Colors.orange,
-          duration: const Duration(milliseconds: 2500),
-        ),
-      );
+      ToastOverlay.show(context, 'Please fill in all required fields: ${missingFields.join(', ')}');
       return false;
     }
     return true;
@@ -434,34 +429,10 @@ class _CfiSummaryScreenState extends State<CfiSummaryScreen> {
           errorMessage = e.toString();
         }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  errorMessage,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                if (detailedError != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    detailedError!,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ],
-              ],
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(milliseconds: 2500),
-            action: SnackBarAction(
-              label: 'OK',
-              textColor: Colors.white,
-              onPressed: () {},
-            ),
-          ),
-        );
+        final msg = detailedError != null
+            ? '$errorMessage\n$detailedError'
+            : errorMessage;
+        ToastOverlay.show(context, msg);
         setState(() {
           _isSubmitting = false;
         });

@@ -7,6 +7,7 @@ import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
 import 'package:skye_app/shared/widgets/base_form_screen.dart';
 import 'package:skye_app/shared/widgets/primary_button.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 
 class SafetyPilotSummaryScreen extends StatefulWidget {
   const SafetyPilotSummaryScreen({
@@ -306,24 +307,12 @@ class _SafetyPilotSummaryScreenState extends State<SafetyPilotSummaryScreen> {
       final msg = (e.response?.data is Map && (e.response?.data as Map)['message'] != null)
           ? (e.response?.data as Map)['message'].toString()
           : e.response?.data?.toString() ?? e.message ?? 'Request failed';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: Colors.red,
-          duration: const Duration(milliseconds: 2500),
-        ),
-      );
+      ToastOverlay.show(context, msg);
       debugPrint('❌ [SafetyPilotSummaryScreen] Submit error: $e');
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Submit failed: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(milliseconds: 2500),
-        ),
-      );
+      ToastOverlay.show(context, 'Submit failed: $e');
       debugPrint('❌ [SafetyPilotSummaryScreen] Submit error: $e');
     }
   }

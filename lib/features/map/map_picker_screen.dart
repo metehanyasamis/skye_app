@@ -207,6 +207,56 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     }
   }
 
+  Future<void> _zoomIn() async {
+    if (_mapboxMap == null) return;
+    try {
+      final state = await _mapboxMap!.getCameraState();
+      final center = state.center;
+      final zoom = state.zoom;
+      if (center != null) {
+        final coords = center.coordinates;
+        final lat = coords.lat.toDouble();
+        final lng = coords.lng.toDouble();
+        final newZoom = (zoom + 1).clamp(1.0, 20.0);
+        await _mapboxMap!.flyTo(
+          CameraOptions(
+            center: Point(coordinates: Position(lng, lat)),
+            zoom: newZoom,
+          ),
+          MapAnimationOptions(duration: 200, startDelay: 0),
+        );
+        debugPrint('🔍 [MapPickerScreen] zoomIn: $zoom -> $newZoom');
+      }
+    } catch (e) {
+      debugPrint('❌ [MapPickerScreen] zoomIn error: $e');
+    }
+  }
+
+  Future<void> _zoomOut() async {
+    if (_mapboxMap == null) return;
+    try {
+      final state = await _mapboxMap!.getCameraState();
+      final center = state.center;
+      final zoom = state.zoom;
+      if (center != null) {
+        final coords = center.coordinates;
+        final lat = coords.lat.toDouble();
+        final lng = coords.lng.toDouble();
+        final newZoom = (zoom - 1).clamp(1.0, 20.0);
+        await _mapboxMap!.flyTo(
+          CameraOptions(
+            center: Point(coordinates: Position(lng, lat)),
+            zoom: newZoom,
+          ),
+          MapAnimationOptions(duration: 200, startDelay: 0),
+        );
+        debugPrint('🔍 [MapPickerScreen] zoomOut: $zoom -> $newZoom');
+      }
+    } catch (e) {
+      debugPrint('❌ [MapPickerScreen] zoomOut error: $e');
+    }
+  }
+
   Future<void> _onMapIdle() async {
     _idleDebounce?.cancel();
     _idleDebounce = Timer(const Duration(milliseconds: 300), () async {
@@ -460,7 +510,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             icon: Icons.add,
                             onPressed: () async {
                               DebugLogger.log('MapPickerScreen', 'zoom in');
-                              await _mapboxMap?.scaleBy(1.5, null, null);
+                              await _zoomIn();
                             },
                           ),
                           const SizedBox(height: 8),
@@ -468,7 +518,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             icon: Icons.remove,
                             onPressed: () async {
                               DebugLogger.log('MapPickerScreen', 'zoom out');
-                              await _mapboxMap?.scaleBy(0.67, null, null);
+                              await _zoomOut();
                             },
                           ),
                         ],

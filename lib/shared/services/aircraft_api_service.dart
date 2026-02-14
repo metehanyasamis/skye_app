@@ -42,10 +42,14 @@ class AircraftApiService {
 
   /// Get aircraft types list
   /// Endpoint: GET /aircraft-types (fallback to static list on error)
-  Future<List<AircraftTypeModel>> getAircraftTypes() async {
+  /// page: pagination (backend may support page/per_page)
+  Future<List<AircraftTypeModel>> getAircraftTypes({int page = 1}) async {
     try {
-      debugPrint('✈️ [AircraftApiService] getAircraftTypes');
-      final response = await ApiService.instance.dio.get('/aircraft-types');
+      debugPrint('✈️ [AircraftApiService] getAircraftTypes page=$page');
+      final response = await ApiService.instance.dio.get(
+        '/aircraft-types',
+        queryParameters: {'page': page, 'per_page': 20},
+      );
       debugPrint('✅ [AircraftApiService] getAircraftTypes success');
       final data = response.data;
       if (data is Map && data['data'] != null) {

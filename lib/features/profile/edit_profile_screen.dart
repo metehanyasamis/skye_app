@@ -6,11 +6,14 @@ import 'package:intl/intl.dart';
 
 import 'package:skye_app/shared/services/api_service.dart';
 import 'package:skye_app/shared/services/auth_api_service.dart';
+import 'package:skye_app/shared/services/pilot_api_service.dart';
+import 'package:skye_app/shared/widgets/auth_avatar_image.dart';
 import 'package:skye_app/shared/services/profile_avatar_cache.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
 import 'package:skye_app/shared/widgets/app_text_field.dart';
 import 'package:skye_app/shared/widgets/date_picker_field.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 
 /// Edit profile - name, surname, date of birth, email, phone, password
 class EditProfileScreen extends StatefulWidget {
@@ -58,7 +61,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _loadUser() async {
     try {
       final user = await AuthApiService.instance.getMe();
-      final u = user['user'] as Map<String, dynamic>? ?? user;
+      Map<String, dynamic> u = user['user'] as Map<String, dynamic>? ?? user;
+      final pilotProfile = await PilotApiService.instance.getPilotProfile();
+      if (pilotProfile != null && mounted) {
+        final pp = pilotProfile['data'] as Map<String, dynamic>? ?? pilotProfile;
+        final photoPath = pp['profile_photo_path']?.toString();
+        if (photoPath != null && photoPath.trim().isNotEmpty) {
+          u = Map<String, dynamic>.from(u)..['profile_photo_path'] = photoPath;
+          debugPrint('✏️ [EditProfileScreen] merged profile_photo_path from pilot profile');
+        }
+      }
       if (mounted) {
         final fn = (u['first_name'] ?? u['firstName'] ?? '').toString().trim();
         final ln = (u['last_name'] ?? u['lastName'] ?? '').toString().trim();
@@ -129,7 +141,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final newPass = _newPasswordController.text;
     final confirm = _confirmPasswordController.text;
     if (newPass.isNotEmpty || confirm.isNotEmpty) {
-      _newPasswordError = newPass.length < 6 ? 'Password must be at least 6 characters' : null;
+      _newPasswordError = newPass.length < 8 ? 'Password must be at least 8 characters' : null;
       _confirmError = newPass != confirm ? 'Passwords do not match' : null;
     } else {
       _newPasswordError = null;
@@ -160,6 +172,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (_dateOfBirth != null) 'date_of_birth': DateFormat('yyyy-MM-dd').format(_dateOfBirth!),
       });
 
+      if (_avatarFile != null && _avatarFile!.existsSync()) {
+        try {
+          await PilotApiService.instance.uploadProfilePhoto(_avatarFile!);
+        } catch (e) {
+          debugPrint('⚠️ [EditProfileScreen] avatar upload failed (may not be pilot): $e');
+        }
+      }
+
       final newPass = _newPasswordController.text;
       if (newPass.isNotEmpty && _currentPasswordController.text.isNotEmpty) {
         await AuthApiService.instance.updatePassword(
@@ -171,17 +191,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       if (mounted) {
         ProfileAvatarCache.instance.set(_avatarFile);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
-        );
+        ToastOverlay.show(context, 'Profile updated successfully', isError: false);
         Navigator.of(context).pop({'updated': true, 'avatarFile': _avatarFile});
       }
     } catch (e) {
       debugPrint('❌ [EditProfileScreen] save error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update: ${e.toString()}')),
-        );
+        ToastOverlay.show(context, 'Failed to update: ${e.toString()}');
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -202,7 +218,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.labelBlack),
           onPressed: () {
             debugPrint('⬅️ [EditProfileScreen] Back pressed');
-            Navigator.of(context).pop();
+            ProfileAvatarCache.instance.set(_avatarFile);
+            Navigator.of(context).pop({'updated': _avatarFile != null, 'avatarFile': _avatarFile});
           },
         ),
         title: const Text(
@@ -445,28 +462,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         height: 100,
                       ),
                     )
-                  : _avatarUrl != null
-                      ? ClipOval(
-                          child: Image.network(
-                            _avatarUrl!,
-                            fit: BoxFit.cover,
-                            width: 100,
-                            height: 100,
-                            errorBuilder: (_, __, ___) => const CircleAvatar(
-                              backgroundColor: AppColors.cardLight,
-                              child: Icon(Icons.person, size: 48, color: AppColors.textSecondary),
-                            ),
-                          ),
+                  : _avatarUrl != null && _avatarUrl!.trim().isNotEmpty
+                      ? AuthAvatarImage(
+                          imageUrl: _avatarUrl!,
+                          size: 100,
+                          placeholderIconSize: 48,
                         )
                       : CircleAvatar(
-                      radius: 48,
-                      backgroundColor: AppColors.cardLight,
-                      child: Icon(
-                        Icons.person,
-                        size: 48,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+                          radius: 48,
+                          backgroundColor: AppColors.cardLight,
+                          child: Icon(
+                            Icons.person,
+                            size: 48,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
             ),
             Positioned(
               right: 0,
@@ -555,9 +565,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       debugPrint('❌ [EditProfileScreen] pickImage error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
-        );
+        ToastOverlay.show(context, 'Failed to pick image: $e');
       }
     }
   }

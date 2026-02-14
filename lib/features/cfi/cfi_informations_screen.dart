@@ -8,6 +8,7 @@ import 'package:skye_app/shared/widgets/base_form_screen.dart';
 import 'package:skye_app/shared/widgets/booking_chips.dart';
 import 'package:skye_app/shared/widgets/hourly_rate_selector.dart';
 import 'package:skye_app/shared/widgets/primary_button.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 import 'package:skye_app/shared/widgets/rating_chips.dart';
 
 class CfiInformationsScreen extends StatefulWidget {
@@ -98,13 +99,7 @@ class _CfiInformationsScreenState extends State<CfiInformationsScreen> {
 
   void _handleNextPage() {
     if (!_validateForm()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all required fields'),
-          backgroundColor: Colors.red,
-          duration: Duration(milliseconds: 2500),
-        ),
-      );
+      ToastOverlay.show(context, 'Please fill in all required fields');
       return;
     }
 

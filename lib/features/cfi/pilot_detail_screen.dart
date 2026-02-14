@@ -3,7 +3,9 @@ import 'package:skye_app/shared/models/pilot_model.dart';
 import 'package:skye_app/shared/services/pilot_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
+import 'package:skye_app/shared/widgets/favorite_button.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:skye_app/shared/services/favorites_api_service.dart';
 
 /// Tekil pilot/CFI/Safety Pilot detay ekranı.
 /// Listing’den gelen pilot id ile GET /api/pilots/{id} kullanır.
@@ -12,12 +14,16 @@ class PilotDetailScreen extends StatefulWidget {
     super.key,
     this.pilot,
     this.pilotId,
+    this.pilotType = 'pilot',
+    this.initialIsFavorited = false,
   }) : assert(pilot != null || pilotId != null, 'pilot veya pilotId gerekli');
 
   static const routeName = '/pilot/detail';
 
   final PilotModel? pilot;
   final int? pilotId;
+  final String pilotType;
+  final bool initialIsFavorited;
 
   @override
   State<PilotDetailScreen> createState() => _PilotDetailScreenState();
@@ -27,10 +33,12 @@ class _PilotDetailScreenState extends State<PilotDetailScreen> {
   PilotModel? _pilot;
   bool _loading = true;
   String? _error;
+  late bool _isFavorited;
 
   @override
   void initState() {
     super.initState();
+    _isFavorited = widget.initialIsFavorited;
     _load();
   }
 
@@ -71,6 +79,23 @@ class _PilotDetailScreenState extends State<PilotDetailScreen> {
     final uri = Uri.parse('tel:$phone');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    final id = _pilot?.id;
+    if (id == null) return;
+    try {
+      final result = await FavoritesApiService.instance.toggleFavorite(
+        widget.pilotType,
+        id,
+      );
+      if (mounted) {
+        setState(() => _isFavorited = result.isFavorited);
+        debugPrint('❤️ [PilotDetailScreen] Toggle favorite pilotId=$id -> ${result.isFavorited}');
+      }
+    } catch (e) {
+      debugPrint('❌ [PilotDetailScreen] Toggle favorite failed: $e');
     }
   }
 
@@ -171,15 +196,11 @@ class _PilotDetailScreenState extends State<PilotDetailScreen> {
                         padding: const EdgeInsets.all(8),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.favorite_border, color: AppColors.labelBlack),
-                      onPressed: () {
-                        debugPrint('❤️ [PilotDetailScreen] Favorite pressed');
-                      },
-                      style: IconButton.styleFrom(
-                        minimumSize: const Size(44, 44),
-                        padding: const EdgeInsets.all(8),
-                      ),
+                    FavoriteButton(
+                      isFavorited: _isFavorited,
+                      onTap: _toggleFavorite,
+                      size: 24,
+                      color: AppColors.labelBlack,
                     ),
                   ],
                 ),

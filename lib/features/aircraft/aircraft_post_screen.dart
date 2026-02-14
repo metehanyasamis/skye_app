@@ -7,6 +7,7 @@ import 'package:skye_app/shared/utils/system_ui_helper.dart';
 import 'package:skye_app/shared/widgets/booking_chips.dart';
 import 'package:skye_app/shared/widgets/location_picker_sheets.dart';
 import 'package:skye_app/shared/widgets/primary_button.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 
 
 class AircraftPostScreen extends StatefulWidget {
@@ -73,13 +74,7 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
     final title = _aircraftNameController.text.trim();
     final model = _aircraftBrandController.text.trim();
     if (title.isEmpty || model.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill Aircraft name and Aircraft brand'),
-          backgroundColor: Colors.orange,
-          duration: Duration(milliseconds: 2500),
-        ),
-      );
+      ToastOverlay.show(context, 'Please fill Aircraft name and Aircraft brand');
       return;
     }
 
@@ -111,35 +106,17 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
     try {
       await AircraftApiService.instance.createAircraftListing(body);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Aircraft listing created'),
-          backgroundColor: Colors.green,
-          duration: Duration(milliseconds: 2500),
-        ),
-      );
+      ToastOverlay.show(context, 'Aircraft listing created', isError: false);
       Navigator.of(context).pop();
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
       final msg = e.response?.data?.toString() ?? e.message ?? 'Request failed';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to create listing: $msg'),
-          backgroundColor: Colors.red,
-          duration: const Duration(milliseconds: 2500),
-        ),
-      );
+      ToastOverlay.show(context, 'Failed to create listing: $msg');
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to create listing: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(milliseconds: 2500),
-        ),
-      );
+      ToastOverlay.show(context, 'Failed to create listing: $e');
     }
   }
 
@@ -456,12 +433,7 @@ class _AircraftPostScreenState extends State<AircraftPostScreen> {
                               value: _selectedCityModel?.name ?? _cityController.text,
                               onTap: () async {
                                 if (_selectedStateModel == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Select State first'),
-                                      duration: Duration(milliseconds: 2500),
-                                    ),
-                                  );
+                                  ToastOverlay.show(context, 'Select State first');
                                   return;
                                 }
                                 final picked = await showCityPickerSheet(

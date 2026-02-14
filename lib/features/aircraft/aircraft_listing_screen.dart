@@ -9,6 +9,8 @@ import 'package:skye_app/features/notifications/notifications_screen.dart';
 import 'package:skye_app/shared/models/aircraft_model.dart';
 import 'package:skye_app/shared/models/location_models.dart';
 import 'package:skye_app/shared/services/aircraft_api_service.dart';
+import 'package:skye_app/shared/services/favorites_api_service.dart';
+import 'package:skye_app/shared/services/user_address_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
@@ -30,6 +32,7 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
   List<AircraftModel> _aircrafts = [];
   bool _isLoading = true;
   String? _error;
+  Set<int> _favoritedAircraftIds = {};
 
   String? _searchQuery;
   Timer? _searchDebounce;
@@ -235,7 +238,14 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
       _locationCity,
       _locationAirport,
     ].whereType<String>().where((s) => s.trim().isNotEmpty).map((s) => s.trim()).toList();
-    final location = locationParts.isEmpty ? null : locationParts.join(', ');
+    final location = locationParts.isNotEmpty
+        ? locationParts.join(', ')
+        : (UserAddressService.instance.address.trim().isNotEmpty
+            ? UserAddressService.instance.address.trim()
+            : null);
+    if (location != null) {
+      debugPrint('📍 [AircraftListingScreen] _loadAircrafts location=$location');
+    }
 
     try {
       final response = await AircraftApiService.instance.getAircraftListings(
@@ -261,6 +271,7 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
           _aircrafts = list;
           _isLoading = false;
         });
+        _loadFavorites();
       }
     } catch (e) {
       debugPrint('❌ [AircraftListingScreen] Failed to load aircrafts: $e');
@@ -271,6 +282,41 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
           _aircrafts = [];
         });
       }
+    }
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      final resp = await FavoritesApiService.instance.getFavorites(
+        FavoritesApiService.typeAircraft,
+      );
+      if (mounted) {
+        setState(() => _favoritedAircraftIds = resp.aircraftIds);
+        debugPrint('❤️ [AircraftListingScreen] Loaded ${_favoritedAircraftIds.length} favorites');
+      }
+    } catch (e) {
+      debugPrint('⚠️ [AircraftListingScreen] Failed to load favorites: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite(int aircraftId) async {
+    try {
+      final result = await FavoritesApiService.instance.toggleFavorite(
+        FavoritesApiService.typeAircraft,
+        aircraftId,
+      );
+      if (mounted) {
+        setState(() {
+          if (result.isFavorited) {
+            _favoritedAircraftIds.add(aircraftId);
+          } else {
+            _favoritedAircraftIds.remove(aircraftId);
+          }
+        });
+        debugPrint('❤️ [AircraftListingScreen] Toggle favorite aircraftId=$aircraftId -> ${result.isFavorited}');
+      }
+    } catch (e) {
+      debugPrint('❌ [AircraftListingScreen] Toggle favorite failed: $e');
     }
   }
 
@@ -461,10 +507,15 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
                               final aircraft = _aircrafts[index];
                               return AircraftCard.fromModel(
                                 aircraft,
+                                isFavorited: _favoritedAircraftIds.contains(aircraft.id),
+                                onFavoriteTap: () => _toggleFavorite(aircraft.id),
                                 onTap: () {
                                   Navigator.of(context).pushNamed(
                                     AircraftDetailScreen.routeName,
-                                    arguments: aircraft.id,
+                                    arguments: {
+                                      'id': aircraft.id,
+                                      'isFavorited': _favoritedAircraftIds.contains(aircraft.id),
+                                    },
                                   );
                                 },
                               );
@@ -474,7 +525,7 @@ class _AircraftListingScreenState extends State<AircraftListingScreen> {
             ],
           ),
           Positioned(
-            bottom: 76,
+            bottom: 48,
             right: 16,
             child: PostFab(
               onTap: () {

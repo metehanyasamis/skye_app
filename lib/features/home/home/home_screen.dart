@@ -45,9 +45,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('📱 [HomeScreen] initState()');
     _loadBanners();
-    _loadBlogPosts();
     _loadPilots();
+    // Defer blog load to next frame so first build completes; fixes blog not showing on initial open
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        debugPrint('📱 [HomeScreen] addPostFrameCallback -> _loadBlogPosts');
+        _loadBlogPosts();
+      }
+    });
   }
 
   Future<void> _loadBanners() async {

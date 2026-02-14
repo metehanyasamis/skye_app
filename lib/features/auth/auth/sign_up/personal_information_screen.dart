@@ -78,7 +78,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
 
     _firstNameError = first.isEmpty ? 'İsim girin' : null;
     _lastNameError = last.isEmpty ? 'Soyisim girin' : null;
-    _dateError = _selectedDate == null ? 'Doğum tarihi girin' : null;
+    _dateError = null;
 
     if (email.isEmpty) {
       _emailError = 'Email girin';
@@ -104,7 +104,6 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
 
     return _firstNameError == null &&
         _lastNameError == null &&
-        _dateError == null &&
         _emailError == null &&
         _passwordError == null &&
         _confirmError == null;

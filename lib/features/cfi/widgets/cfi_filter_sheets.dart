@@ -3,6 +3,7 @@ import 'package:skye_app/shared/models/location_models.dart';
 import 'package:skye_app/shared/services/aircraft_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/widgets/location_picker_sheets.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 
 /// Filter bottom sheets for CFI listing. Same pattern as aircraft_filter_sheets.
 
@@ -166,9 +167,21 @@ class _CfiAircraftTypeFilterSheet extends StatefulWidget {
 class _CfiAircraftTypeFilterSheetState extends State<_CfiAircraftTypeFilterSheet> {
   List<AircraftTypeModel> _types = [];
   bool _loading = true;
+  bool _loadingMore = false;
   String? _error;
   String? _selected;
+  int _page = 1;
+  bool _hasMore = true;
+  ScrollController? _sheetScrollController;
   final _searchController = TextEditingController();
+
+  void _onScroll() {
+    if (_sheetScrollController == null || _loadingMore || !_hasMore) return;
+    final pos = _sheetScrollController!.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      _loadMore();
+    }
+  }
 
   @override
   void initState() {
@@ -179,6 +192,7 @@ class _CfiAircraftTypeFilterSheetState extends State<_CfiAircraftTypeFilterSheet
 
   @override
   void dispose() {
+    _sheetScrollController?.removeListener(_onScroll);
     _searchController.dispose();
     super.dispose();
   }
@@ -187,13 +201,16 @@ class _CfiAircraftTypeFilterSheetState extends State<_CfiAircraftTypeFilterSheet
     setState(() {
       _loading = true;
       _error = null;
+      _page = 1;
+      _hasMore = true;
     });
     try {
-      final list = await AircraftApiService.instance.getAircraftTypes();
+      final list = await AircraftApiService.instance.getAircraftTypes(page: 1);
       if (mounted) {
         setState(() {
           _types = list;
           _loading = false;
+          _hasMore = list.length >= 20;
         });
         debugPrint('✅ [CfiAircraftTypeFilterSheet] Loaded ${list.length} aircraft types');
       }
@@ -206,6 +223,25 @@ class _CfiAircraftTypeFilterSheetState extends State<_CfiAircraftTypeFilterSheet
           _types = [];
         });
       }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final nextPage = _page + 1;
+      final list = await AircraftApiService.instance.getAircraftTypes(page: nextPage);
+      if (mounted) {
+        setState(() {
+          _types.addAll(list);
+          _page = nextPage;
+          _hasMore = list.length >= 20;
+          _loadingMore = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loadingMore = false);
     }
   }
 
@@ -226,6 +262,11 @@ class _CfiAircraftTypeFilterSheetState extends State<_CfiAircraftTypeFilterSheet
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
+        if (_sheetScrollController != scrollController) {
+          _sheetScrollController?.removeListener(_onScroll);
+          _sheetScrollController = scrollController;
+          scrollController.addListener(_onScroll);
+        }
         return Container(
           decoration: const BoxDecoration(
             color: AppColors.white,
@@ -290,8 +331,20 @@ class _CfiAircraftTypeFilterSheetState extends State<_CfiAircraftTypeFilterSheet
                           : ListView.builder(
                               controller: scrollController,
                               padding: const EdgeInsets.symmetric(horizontal: 24),
-                              itemCount: _filtered.length,
+                              itemCount: _filtered.length + (_loadingMore ? 1 : 0),
                               itemBuilder: (_, i) {
+                                if (i >= _filtered.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    ),
+                                  );
+                                }
                                 final t = _filtered[i];
                                 final isSelected = _selected == t.code;
                                 return InkWell(
@@ -454,12 +507,7 @@ void showCfiCitySheet(
   CityModel? selectedCity,
 }) async {
   if (stateId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Select State first'),
-        duration: Duration(milliseconds: 2500),
-      ),
-    );
+    ToastOverlay.show(context, 'Select State first');
     return;
   }
   CityModel? sel;

@@ -8,6 +8,7 @@ import 'package:skye_app/shared/models/user_type.dart';
 import 'package:skye_app/shared/services/api_service.dart';
 import 'package:skye_app/shared/services/auth_api_service.dart';
 import 'package:skye_app/shared/services/pilot_api_service.dart';
+import 'package:skye_app/shared/widgets/auth_avatar_image.dart';
 import 'package:skye_app/shared/services/profile_avatar_cache.dart';
 import 'package:skye_app/shared/services/settings_api_service.dart';
 import 'package:skye_app/shared/services/user_type_service.dart';
@@ -15,6 +16,7 @@ import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
 import 'package:skye_app/shared/widgets/confirm_dialog.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 import 'package:skye_app/shared/services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -51,14 +53,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ]);
       if (mounted) {
         final raw = results[0] as Map<String, dynamic>?;
-        final inner = raw?['user'] as Map<String, dynamic>? ?? raw;
-        setState(() {
-          _user = inner;
-          _settings = results[1] as Map<String, dynamic>? ?? {};
-          _myPilotId = results[2] as int?;
-          _loading = false;
-        });
-        debugPrint('👤 [ProfileScreen] _load() success user=${_user != null} settings=${_settings.isNotEmpty} pilotId=$_myPilotId');
+        Map<String, dynamic>? inner = raw?['user'] as Map<String, dynamic>? ?? raw;
+        final pilotProfile = await PilotApiService.instance.getPilotProfile();
+        if (pilotProfile != null && mounted) {
+          final pp = pilotProfile['data'] as Map<String, dynamic>? ?? pilotProfile;
+          final photoPath = pp['profile_photo_path']?.toString();
+          if (photoPath != null && photoPath.isNotEmpty && inner != null) {
+            inner = Map<String, dynamic>.from(inner)..['profile_photo_path'] = photoPath;
+            debugPrint('👤 [ProfileScreen] merged profile_photo_path from pilot profile');
+          }
+        }
+        if (mounted) {
+          setState(() {
+            _user = inner;
+            _settings = results[1] as Map<String, dynamic>? ?? {};
+            _myPilotId = results[2] as int?;
+            _loading = false;
+          });
+          debugPrint('👤 [ProfileScreen] _load() success user=${_user != null} settings=${_settings.isNotEmpty} pilotId=$_myPilotId avatarUrl=${_avatarUrl != null}');
+        }
       }
     } catch (e, st) {
       debugPrint('❌ [ProfileScreen] _load() error: $e\n$st');
@@ -263,26 +276,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           height: 57,
                         ),
                       );
-                    return null;
-                  }() ??
-                      (_avatarUrl != null
-                          ? ClipOval(
-                              child: Image.network(
-                                _avatarUrl!,
-                                fit: BoxFit.cover,
-                                width: 57,
-                                height: 57,
-                                errorBuilder: (_, __, ___) => const CircleAvatar(
-                                  backgroundColor: AppColors.cardLight,
-                                  child: Icon(Icons.person, size: 40, color: AppColors.textSecondary),
-                                ),
-                              ),
-                            )
-                          : null) ??
-                      const CircleAvatar(
-                              backgroundColor: AppColors.cardLight,
-                              child: Icon(Icons.person, size: 40, color: AppColors.textSecondary),
-                            ),
+                    if (_avatarUrl != null && _avatarUrl!.trim().isNotEmpty)
+                      return AuthAvatarImage(imageUrl: _avatarUrl!, size: 57, placeholderIconSize: 40);
+                    return const CircleAvatar(
+                      backgroundColor: AppColors.cardLight,
+                      child: Icon(Icons.person, size: 40, color: AppColors.textSecondary),
+                    );
+                  }(),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -362,9 +362,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       } else {
         debugPrint('⚠️ [ProfileScreen] No pilot ID for CFI, cannot edit');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil bilgisi yüklenemedi. Lütfen tekrar deneyin.')),
-        );
+        ToastOverlay.show(context, 'Profil bilgisi yüklenemedi. Lütfen tekrar deneyin.');
       }
     } else if (userType == UserType.safetyPilot) {
       if (_myPilotId != null) {
@@ -375,14 +373,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       } else {
         debugPrint('⚠️ [ProfileScreen] No pilot ID for Safety Pilot, cannot edit');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil bilgisi yüklenemedi. Lütfen tekrar deneyin.')),
-        );
+        ToastOverlay.show(context, 'Profil bilgisi yüklenemedi. Lütfen tekrar deneyin.');
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Düzenlemek için CFI veya Safety Pilot profiliniz olmalıdır.')),
-      );
+      ToastOverlay.show(context, 'Düzenlemek için CFI veya Safety Pilot profiliniz olmalıdır.');
     }
   }
 
@@ -583,8 +577,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: 'Terms of Service',
                   html: terms,
                   onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.of(context, rootNavigator: true).pushNamed(
+                    Navigator.of(ctx, rootNavigator: true).pushNamed(
                       AppRoutes.htmlContent,
                       arguments: {'title': 'Terms of Service', 'html': terms ?? '<p>İçerik henüz eklenmedi.</p>'},
                     );
@@ -594,8 +587,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: 'Privacy Protection',
                   html: privacy,
                   onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.of(context, rootNavigator: true).pushNamed(
+                    Navigator.of(ctx, rootNavigator: true).pushNamed(
                       AppRoutes.htmlContent,
                       arguments: {'title': 'Privacy Protection', 'html': privacy ?? '<p>İçerik henüz eklenmedi.</p>'},
                     );
@@ -605,8 +597,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: 'Data Protection',
                   html: kvkk,
                   onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.of(context, rootNavigator: true).pushNamed(
+                    Navigator.of(ctx, rootNavigator: true).pushNamed(
                       AppRoutes.htmlContent,
                       arguments: {'title': 'Data Protection', 'html': kvkk ?? '<p>İçerik henüz eklenmedi.</p>'},
                     );

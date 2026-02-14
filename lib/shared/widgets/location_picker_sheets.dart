@@ -494,9 +494,21 @@ class _AirportPickerSheetState extends State<_AirportPickerSheet> {
   final _searchController = TextEditingController();
   List<AirportModel> _airports = [];
   bool _loading = false;
+  bool _loadingMore = false;
   String? _error;
   Timer? _debounce;
   AirportModel? _pending;
+  int _page = 1;
+  bool _hasMore = true;
+  ScrollController? _sheetScrollController;
+
+  void _onScroll() {
+    if (_sheetScrollController == null || widget.cityId != null || _loadingMore || !_hasMore) return;
+    final pos = _sheetScrollController!.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      _loadMore();
+    }
+  }
 
   @override
   void initState() {
@@ -510,6 +522,30 @@ class _AirportPickerSheetState extends State<_AirportPickerSheet> {
     _searchController.addListener(_onSearchChanged);
   }
 
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore || widget.cityId != null) return;
+    setState(() => _loadingMore = true);
+    try {
+      final q = _searchController.text.trim();
+      final nextPage = _page + 1;
+      final list = q.length >= 2
+          ? await LocationApiService.instance.searchAirports(query: q, page: nextPage)
+          : await LocationApiService.instance.searchAirports(init: true, page: nextPage);
+      if (mounted) {
+        setState(() {
+          _airports.addAll(list);
+          _page = nextPage;
+          _hasMore = list.length >= 20;
+          _loadingMore = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingMore = false);
+      }
+    }
+  }
+
   void _onSearchChanged() {
     if (widget.cityId != null) {
       setState(() {});
@@ -518,6 +554,8 @@ class _AirportPickerSheetState extends State<_AirportPickerSheet> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () {
       final q = _searchController.text.trim();
+      _page = 1;
+      _hasMore = true;
       if (q.length >= 2) {
         _searchAirports(q);
       } else if (q.isEmpty) {
@@ -530,13 +568,16 @@ class _AirportPickerSheetState extends State<_AirportPickerSheet> {
     setState(() {
       _loading = true;
       _error = null;
+      _page = 1;
+      _hasMore = true;
     });
     try {
-      final list = await LocationApiService.instance.searchAirports(init: true);
+      final list = await LocationApiService.instance.searchAirports(init: true, page: 1);
       if (mounted) {
         setState(() {
           _airports = list;
           _loading = false;
+          _hasMore = list.length >= 20;
         });
       }
     } catch (e) {
@@ -553,13 +594,16 @@ class _AirportPickerSheetState extends State<_AirportPickerSheet> {
     setState(() {
       _loading = true;
       _error = null;
+      _page = 1;
+      _hasMore = true;
     });
     try {
-      final list = await LocationApiService.instance.searchAirports(query: query);
+      final list = await LocationApiService.instance.searchAirports(query: query, page: 1);
       if (mounted) {
         setState(() {
           _airports = list;
           _loading = false;
+          _hasMore = list.length >= 20;
         });
       }
     } catch (e) {
@@ -599,6 +643,7 @@ class _AirportPickerSheetState extends State<_AirportPickerSheet> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _sheetScrollController?.removeListener(_onScroll);
     _searchController.dispose();
     super.dispose();
   }
@@ -623,6 +668,11 @@ class _AirportPickerSheetState extends State<_AirportPickerSheet> {
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
+        if (_sheetScrollController != scrollController) {
+          _sheetScrollController?.removeListener(_onScroll);
+          _sheetScrollController = scrollController;
+          scrollController.addListener(_onScroll);
+        }
         return Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -691,8 +741,18 @@ class _AirportPickerSheetState extends State<_AirportPickerSheet> {
                             )
                           : ListView.builder(
                               controller: scrollController,
-                              itemCount: displayList.length,
+                              itemCount: displayList.length + (_loadingMore ? 1 : 0),
                               itemBuilder: (context, i) {
+                                if (i >= displayList.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(child: SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )),
+                                  );
+                                }
                                 final a = displayList[i];
                                 final isSelected = _isSelected(a);
                                 return InkWell(

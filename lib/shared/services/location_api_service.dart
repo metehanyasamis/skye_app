@@ -61,26 +61,34 @@ class LocationApiService {
   /// GET /api/airports/search – arama veya init listesi
   /// query: min 2 karakter (init=false ise zorunlu)
   /// init: true ise varsayılan liste döner
-  Future<List<AirportModel>> searchAirports({String? query, bool init = false}) async {
+  /// page: pagination
+  Future<List<AirportModel>> searchAirports({
+    String? query,
+    bool init = false,
+    int page = 1,
+  }) async {
     try {
-      debugPrint('📍 [LocationApiService] searchAirports: query=$query, init=$init');
-      final params = <String, dynamic>{};
+      debugPrint('📍 [LocationApiService] searchAirports: query=$query, init=$init, page=$page');
+      final params = <String, dynamic>{
+        'page': page,
+        'per_page': 20,
+      };
       if (query != null && query.trim().length >= 2) {
         params['query'] = query.trim();
       }
-      if (init) {
+      if (init && page == 1) {
         params['init'] = true;
       }
       final response = await ApiService.instance.dio.get(
         '/airports/search',
-        queryParameters: params.isEmpty ? null : params,
+        queryParameters: params,
       );
       final data = response.data;
       if (data is Map && data['data'] is List) {
         final list = (data['data'] as List)
             .map((e) => AirportModel.fromJson(e as Map<String, dynamic>))
             .toList();
-        debugPrint('📍 [LocationApiService] searchAirports success: ${list.length} airports');
+        debugPrint('📍 [LocationApiService] searchAirports success: ${list.length} airports (page=$page)');
         return list;
       }
       return [];

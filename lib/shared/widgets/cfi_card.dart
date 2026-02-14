@@ -5,6 +5,7 @@ import 'package:skye_app/shared/models/pilot_model.dart';
 import 'package:skye_app/shared/services/api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
+import 'package:skye_app/shared/widgets/favorite_button.dart';
 
 /// CFI listing kartı – CFI ekranında kullanılır.
 class CfiCard extends StatelessWidget {
@@ -12,10 +13,14 @@ class CfiCard extends StatelessWidget {
     super.key,
     required this.pilot,
     this.onTap,
+    this.isFavorited = false,
+    this.onFavoriteTap,
   });
 
   final PilotModel pilot;
   final VoidCallback? onTap;
+  final bool isFavorited;
+  final VoidCallback? onFavoriteTap;
 
   /// Check if pilot owns aircraft
   bool get _hasAircraft {
@@ -272,19 +277,18 @@ class CfiCard extends StatelessWidget {
                               maxLines: 1,
                             ),
                           ),
-                          GestureDetector(
+                          FavoriteButton(
+                            isFavorited: isFavorited,
                             onTap: () {
                               DebugLogger.log(
                                 'CfiCard',
                                 'favorite tapped',
                                 {'pilotId': pilot.id, 'name': displayName},
                               );
+                              onFavoriteTap?.call();
                             },
-                            child: const Icon(
-                              Icons.favorite_border,
-                              size: 18,
-                              color: AppColors.labelBlack,
-                            ),
+                            size: 18,
+                            color: AppColors.labelBlack,
                           ),
                         ],
                       ),

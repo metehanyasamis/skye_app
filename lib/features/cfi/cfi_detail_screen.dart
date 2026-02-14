@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:skye_app/features/cfi/pilot_detail_screen.dart';
 import 'package:skye_app/shared/models/pilot_model.dart';
+import 'package:skye_app/shared/services/favorites_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/system_ui_helper.dart';
 
@@ -19,13 +20,23 @@ class CfiDetailScreen extends StatelessWidget {
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final pilot = args?['pilot'] as PilotModel?;
     final pilotId = args?['pilotId'] ?? args?['applicationId'];
+    final isFavorited = args?['isFavorited'] as bool? ?? false;
+    final pilotType = args?['pilotType'] as String? ?? FavoritesApiService.typePilot;
     if (pilot != null) {
-      return PilotDetailScreen(pilot: pilot);
+      return PilotDetailScreen(
+        pilot: pilot,
+        pilotType: pilotType,
+        initialIsFavorited: isFavorited,
+      );
     }
     if (pilotId != null) {
       final id = pilotId is int ? pilotId : int.tryParse(pilotId.toString());
       if (id != null) {
-        return PilotDetailScreen(pilotId: id);
+        return PilotDetailScreen(
+          pilotId: id,
+          pilotType: pilotType,
+          initialIsFavorited: isFavorited,
+        );
       }
     }
 

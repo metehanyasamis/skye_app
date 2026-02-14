@@ -3,6 +3,7 @@ import 'package:skye_app/shared/models/aircraft_model.dart';
 import 'package:skye_app/shared/services/api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/utils/debug_logger.dart';
+import 'package:skye_app/shared/widgets/favorite_button.dart';
 
 /// Aircraft listing kartı – Aircraft ekranında kullanılır.
 /// CfiCard yapısı ile tam uyumlu hale getirilmiştir.
@@ -11,15 +12,29 @@ class AircraftCard extends StatelessWidget {
     super.key,
     required this.aircraft,
     this.onTap,
+    this.isFavorited = false,
+    this.onFavoriteTap,
   });
 
   /// Factory constructor from AircraftModel
-  factory AircraftCard.fromModel(AircraftModel aircraft, {VoidCallback? onTap}) {
-    return AircraftCard(aircraft: aircraft, onTap: onTap);
+  factory AircraftCard.fromModel(
+    AircraftModel aircraft, {
+    VoidCallback? onTap,
+    bool isFavorited = false,
+    VoidCallback? onFavoriteTap,
+  }) {
+    return AircraftCard(
+      aircraft: aircraft,
+      onTap: onTap,
+      isFavorited: isFavorited,
+      onFavoriteTap: onFavoriteTap,
+    );
   }
 
   final AircraftModel aircraft;
   final VoidCallback? onTap;
+  final bool isFavorited;
+  final VoidCallback? onFavoriteTap;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +107,12 @@ class AircraftCard extends StatelessWidget {
                               maxLines: 1,
                             ),
                           ),
-                          const Icon(Icons.favorite_border, size: 18, color: AppColors.labelBlack),
+                          FavoriteButton(
+                            isFavorited: isFavorited,
+                            onTap: onFavoriteTap,
+                            size: 18,
+                            color: AppColors.labelBlack,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 8),

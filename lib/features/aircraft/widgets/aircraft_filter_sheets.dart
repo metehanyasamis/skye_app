@@ -3,6 +3,7 @@ import 'package:skye_app/shared/models/location_models.dart';
 import 'package:skye_app/shared/services/aircraft_api_service.dart';
 import 'package:skye_app/shared/theme/app_colors.dart';
 import 'package:skye_app/shared/widgets/location_picker_sheets.dart';
+import 'package:skye_app/shared/widgets/toast_overlay.dart';
 
 /// Filter bottom sheets for aircraft listing. Stay on same screen; no navigation.
 
@@ -217,9 +218,21 @@ class _AircraftTypeFilterSheet extends StatefulWidget {
 class _AircraftTypeFilterSheetState extends State<_AircraftTypeFilterSheet> {
   List<AircraftTypeModel> _types = [];
   bool _loading = true;
+  bool _loadingMore = false;
   String? _error;
   int? _selected;
+  int _page = 1;
+  bool _hasMore = true;
+  ScrollController? _sheetScrollController;
   final _searchController = TextEditingController();
+
+  void _onScroll() {
+    if (_sheetScrollController == null || _loadingMore || !_hasMore) return;
+    final pos = _sheetScrollController!.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      _loadMore();
+    }
+  }
 
   @override
   void initState() {
@@ -230,6 +243,7 @@ class _AircraftTypeFilterSheetState extends State<_AircraftTypeFilterSheet> {
 
   @override
   void dispose() {
+    _sheetScrollController?.removeListener(_onScroll);
     _searchController.dispose();
     super.dispose();
   }
@@ -238,13 +252,16 @@ class _AircraftTypeFilterSheetState extends State<_AircraftTypeFilterSheet> {
     setState(() {
       _loading = true;
       _error = null;
+      _page = 1;
+      _hasMore = true;
     });
     try {
-      final list = await AircraftApiService.instance.getAircraftTypes();
+      final list = await AircraftApiService.instance.getAircraftTypes(page: 1);
       if (mounted) {
         setState(() {
           _types = list;
           _loading = false;
+          _hasMore = list.length >= 20;
         });
         debugPrint('✅ [AircraftTypeFilterSheet] Loaded ${list.length} aircraft types');
       }
@@ -257,6 +274,25 @@ class _AircraftTypeFilterSheetState extends State<_AircraftTypeFilterSheet> {
           _types = [];
         });
       }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final nextPage = _page + 1;
+      final list = await AircraftApiService.instance.getAircraftTypes(page: nextPage);
+      if (mounted) {
+        setState(() {
+          _types.addAll(list);
+          _page = nextPage;
+          _hasMore = list.length >= 20;
+          _loadingMore = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loadingMore = false);
     }
   }
 
@@ -277,6 +313,11 @@ class _AircraftTypeFilterSheetState extends State<_AircraftTypeFilterSheet> {
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
+        if (_sheetScrollController != scrollController) {
+          _sheetScrollController?.removeListener(_onScroll);
+          _sheetScrollController = scrollController;
+          scrollController.addListener(_onScroll);
+        }
         return Container(
           decoration: const BoxDecoration(
             color: AppColors.white,
@@ -341,8 +382,20 @@ class _AircraftTypeFilterSheetState extends State<_AircraftTypeFilterSheet> {
                           : ListView.builder(
                               controller: scrollController,
                               padding: const EdgeInsets.symmetric(horizontal: 24),
-                              itemCount: _filtered.length,
+                              itemCount: _filtered.length + (_loadingMore ? 1 : 0),
                               itemBuilder: (_, i) {
+                                if (i >= _filtered.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    ),
+                                  );
+                                }
                                 final t = _filtered[i];
                                 final isSelected = _selected == t.id;
                                 return InkWell(
@@ -499,12 +552,7 @@ void showCitySheet(
   CityModel? selectedCity,
 }) async {
   if (stateId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Select State first'),
-        duration: Duration(milliseconds: 2500),
-      ),
-    );
+    ToastOverlay.show(context, 'Select State first');
     return;
   }
   CityModel? sel = selectedCity ?? (currentValue != null && currentValue.isNotEmpty ? CityModel(id: 0, name: currentValue) : null);

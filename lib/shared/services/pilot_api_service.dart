@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:skye_app/shared/models/pilot_model.dart';
@@ -13,22 +15,24 @@ class PilotApiService {
   /// Get approved CFI pilots for listing (onaylanan CFI pilotları).
   /// 
   /// Endpoint: GET /api/pilots
-  /// Query params: page, per_page, pilot_type (pilot=CFI), status (approved)
+  /// Query params: page, per_page, pilot_type (pilot=CFI), status (approved), location
   /// Response: { "data": [...], "meta": {...}, "links": {...} }
   Future<PilotListResponse> getPilots({
     int? page,
     int? perPage,
     String? pilotType,
     String? status,
+    String? location,
   }) async {
     try {
-      debugPrint('👨‍✈️ [PilotApiService] getPilots: page=$page, perPage=$perPage, pilotType=$pilotType, status=$status');
+      debugPrint('👨‍✈️ [PilotApiService] getPilots: page=$page, perPage=$perPage, pilotType=$pilotType, status=$status, location=$location');
 
       final queryParams = <String, dynamic>{};
       if (page != null) queryParams['page'] = page;
       if (perPage != null) queryParams['per_page'] = perPage;
       if (pilotType != null && pilotType.isNotEmpty) queryParams['pilot_type'] = pilotType;
       if (status != null && status.isNotEmpty) queryParams['status'] = status;
+      if (location != null && location.trim().isNotEmpty) queryParams['location'] = location.trim();
 
       final response = await ApiService.instance.dio.get(
         '/pilots',
@@ -109,6 +113,60 @@ class PilotApiService {
       rethrow;
     } catch (e, st) {
       debugPrint('❌ [PilotApiService] getPilotApplication unexpected error: $e\n$st');
+      rethrow;
+    }
+  }
+
+  /// Get authenticated pilot's profile (CFI/Safety Pilot).
+  /// Includes profile_photo_path, pilot_profile, etc.
+  /// Endpoint: GET /api/pilot/profile (RTF doc)
+  /// Returns null if user is not a pilot or endpoint fails.
+  Future<Map<String, dynamic>?> getPilotProfile() async {
+    try {
+      debugPrint('👨‍✈️ [PilotApiService] getPilotProfile');
+      final response = await ApiService.instance.dio.get('/pilot/profile');
+      debugPrint('✅ [PilotApiService] getPilotProfile success');
+      final data = response.data as Map<String, dynamic>?;
+      return data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || e.response?.statusCode == 403) {
+        debugPrint('⚠️ [PilotApiService] getPilotProfile: no pilot profile (${e.response?.statusCode})');
+        return null;
+      }
+      debugPrint('❌ [PilotApiService] getPilotProfile error: ${e.message}');
+      rethrow;
+    } catch (e, st) {
+      debugPrint('❌ [PilotApiService] getPilotProfile unexpected error: $e\n$st');
+      return null;
+    }
+  }
+
+  /// Upload profile photo (avatar).
+  /// Endpoint: POST /api/pilot/profile/general with multipart (RTF)
+  /// Returns true on success, false if endpoint not available (e.g. non-pilot).
+  Future<bool> uploadProfilePhoto(File file) async {
+    try {
+      debugPrint('📷 [PilotApiService] uploadProfilePhoto: ${file.path}');
+      final formData = FormData.fromMap({
+        '_method': 'PUT',
+        'profile_photo': await MultipartFile.fromFile(file.path, filename: 'profile_photo.jpg'),
+      });
+      await ApiService.instance.dio.post(
+        '/pilot/profile/general',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          sendTimeout: const Duration(seconds: 30),
+        ),
+      );
+      debugPrint('✅ [PilotApiService] uploadProfilePhoto success');
+      return true;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || e.response?.statusCode == 403) {
+        debugPrint('⚠️ [PilotApiService] uploadProfilePhoto: endpoint not available');
+        return false;
+      }
+      debugPrint('❌ [PilotApiService] uploadProfilePhoto error: ${e.message}');
       rethrow;
     }
   }

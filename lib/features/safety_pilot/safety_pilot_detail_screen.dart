@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:skye_app/features/cfi/pilot_detail_screen.dart';
 import 'package:skye_app/shared/models/pilot_model.dart';
+import 'package:skye_app/shared/services/favorites_api_service.dart';
 
 /// Safety Pilot detay ekranı – PilotDetailScreen ile GET /api/pilots/{id} kullanır.
 class SafetyPilotDetailScreen extends StatelessWidget {
@@ -13,12 +14,22 @@ class SafetyPilotDetailScreen extends StatelessWidget {
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final pilot = args?['pilot'] as PilotModel?;
     final pilotId = args?['pilotId'] ?? args?['applicationId'];
+    final isFavorited = args?['isFavorited'] as bool? ?? false;
+    const pilotType = FavoritesApiService.typeSafetyPilot;
     if (pilot != null) {
-      return PilotDetailScreen(pilot: pilot);
+      return PilotDetailScreen(
+        pilot: pilot,
+        pilotType: pilotType,
+        initialIsFavorited: isFavorited,
+      );
     }
     final id = pilotId is int ? pilotId : int.tryParse(pilotId?.toString() ?? '');
     if (id != null && id > 0) {
-      return PilotDetailScreen(pilotId: id);
+      return PilotDetailScreen(
+        pilotId: id,
+        pilotType: pilotType,
+        initialIsFavorited: isFavorited,
+      );
     }
     return Scaffold(
       appBar: AppBar(
